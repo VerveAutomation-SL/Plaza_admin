@@ -1,12 +1,12 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import ComponentCard from '../../common/ComponentCard';
-import Label from '../Label';
-import Input from '../input/InputField';
-import Select from '../Select';
-import { ChevronDownIcon } from '../../../icons';
-import TextArea from '../input/TextArea';
-import FileInput from '../input/FileInput';
+import ComponentCard from '../../../common/ComponentCard';
+import Label from '../../Label';
+import Input from '../../input/InputField';
+import Select from '../../Select';
+import { ChevronDownIcon } from '../../../../icons';
+import TextArea from '../../input/TextArea';
+import FileInput from '../../input/FileInput';
 import Button from '@/components/ui/button/Button';
 import { supabase } from '@/lib/supabaseClient';
 

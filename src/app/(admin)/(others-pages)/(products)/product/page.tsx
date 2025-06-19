@@ -1,5 +1,5 @@
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import DefaultInputs from "@/components/form/form-elements/DefaultInputs";
+import DefaultInputs from "@/components/form/form-elements/DefaultInputs/AddProductInputs";
 import BasicTableOne from "@/components/tables/BasicTableOne";
 import { Metadata } from "next";
 import React from "react";
