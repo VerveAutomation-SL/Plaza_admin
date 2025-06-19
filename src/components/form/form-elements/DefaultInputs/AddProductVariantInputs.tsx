@@ -24,6 +24,16 @@ interface Attribute {
   value: string;
 }
 
+interface ValidationErrors {
+  variantName?: string;
+  productCode?: string;
+  size?: string;
+  sellingPrice?: string;
+  barcode?: string;
+  discountPercentage?: string;
+  attributes?: string[];
+}
+
 export default function DefaultInputs({
   cardTitle = "Add New Product Variant",
   productNameLabel = "Variant Name",
@@ -44,26 +54,152 @@ export default function DefaultInputs({
   const [isDiscountActive, setIsDiscountActive] = useState(false);
   const [attributes, setAttributes] = useState<Attribute[]>([{ name: "", value: "" }]);
 
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const validateForm = (): boolean => {
+    const newErrors: ValidationErrors = {};
+
+    // Variant Name validation
+    if (!variantName.trim()) {
+      newErrors.variantName = "Variant name is required";
+    } else if (variantName.trim().length < 2) {
+      newErrors.variantName = "Variant name must be at least 2 characters";
+    } else if (variantName.trim().length > 100) {
+      newErrors.variantName = "Variant name must be less than 100 characters";
+    }
+
+    // Product Code validation
+    if (!productCode.trim()) {
+      newErrors.productCode = "Product code is required";
+    } else if (productCode.trim().length < 2) {
+      newErrors.productCode = "Product code must be at least 2 characters";
+    }
+
+    // Size validation
+    if (!size.trim()) {
+      newErrors.size = "Size is required";
+    }
+
+    // Selling Price validation
+    if (!sellingPrice.trim()) {
+      newErrors.sellingPrice = "Selling price is required";
+    } else {
+      const price = parseFloat(sellingPrice);
+      if (isNaN(price) || price <= 0) {
+        newErrors.sellingPrice = "Selling price must be a positive number";
+      } else if (price > 999999.99) {
+        newErrors.sellingPrice = "Selling price is too high";
+      }
+    }
+
+    // Barcode validation (required and must be unique)
+    if (!barcode.trim()) {
+      newErrors.barcode = "Barcode is required";
+    } else if (barcode.trim().length < 8 || barcode.trim().length > 20) {
+      newErrors.barcode = "Barcode must be between 8 and 20 characters";
+    }
+
+    // Discount Percentage validation (only if discount is active)
+    if (isDiscountActive) {
+      if (!discountPercentage.trim()) {
+        newErrors.discountPercentage = "Discount percentage is required when discount is active";
+      } else {
+        const discount = parseFloat(discountPercentage);
+        if (isNaN(discount) || discount < 0 || discount > 100) {
+          newErrors.discountPercentage = "Discount percentage must be between 0 and 100";
+        }
+      }
+    } else if (discountPercentage.trim()) {
+      const discount = parseFloat(discountPercentage);
+      if (isNaN(discount) || discount < 0 || discount > 100) {
+        newErrors.discountPercentage = "Discount percentage must be between 0 and 100";
+      }
+    }
+
+    // Attributes validation
+    const attributeErrors: string[] = [];
+    attributes.forEach((attr, index) => {
+      if (attr.name.trim() && !attr.value.trim()) {
+        attributeErrors[index] = "Attribute value is required when name is provided";
+      } else if (!attr.name.trim() && attr.value.trim()) {
+        attributeErrors[index] = "Attribute name is required when value is provided";
+      } else if (attr.name.trim() && attr.name.trim().length > 50) {
+        attributeErrors[index] = "Attribute name must be less than 50 characters";
+      } else if (attr.value.trim() && attr.value.trim().length > 100) {
+        attributeErrors[index] = "Attribute value must be less than 100 characters";
+      }
+    });
+
+    if (attributeErrors.some(error => error)) {
+      newErrors.attributes = attributeErrors;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const clearFieldError = (fieldName: keyof ValidationErrors) => {
+    if (errors[fieldName]) {
+      setErrors(prev => ({
+        ...prev,
+        [fieldName]: undefined
+      }));
+    }
+  };
+
+  const clearAttributeError = (index: number) => {
+    if (errors.attributes && errors.attributes[index]) {
+      setErrors(prev => ({
+        ...prev,
+        attributes: prev.attributes?.map((error, i) => i === index ? "" : error)
+      }));
+    }
+  };
+
   const handleAttributeChange = (index: number, field: keyof Attribute, value: string) => {
     setAttributes((prev) =>
       prev.map((attr, i) => (i === index ? { ...attr, [field]: value } : attr))
     );
+    clearAttributeError(index);
   };
 
   const addAttributeField = () => {
     setAttributes([...attributes, { name: "", value: "" }]);
   };
 
+  const removeAttributeField = (index: number) => {
+    if (attributes.length > 1) {
+      setAttributes(attributes.filter((_, i) => i !== index));
+      // Clear attribute errors for removed field
+      if (errors.attributes) {
+        setErrors(prev => ({
+          ...prev,
+          attributes: prev.attributes?.filter((_, i) => i !== index)
+        }));
+      }
+    }
+  };
+
   const handleSubmit = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // Filter out empty attributes
+    const validAttributes = attributes.filter(attr => attr.name.trim() && attr.value.trim());
+
     const payload = {
-      product_code: productCode,
-      productVariant_name: variantName,
-      size,
+      product_code: productCode.trim(),
+      productVariant_name: variantName.trim(),
+      size: size.trim(),
       selling_price: Number(sellingPrice),
-      barcode,
-      discount_percentage: Number(discountPercentage),
+      barcode: barcode.trim(),
+      discount_percentage: Number(discountPercentage) || 0,
       is_discount_active: isDiscountActive,
-      attributes,
+      attributes: validAttributes,
     };
 
     try {
@@ -75,12 +211,30 @@ export default function DefaultInputs({
         body: JSON.stringify(payload),
       });
 
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const result = await res.json();
       console.log("API response:", result);
       alert("Product variant added successfully!");
+
+      // Reset form on success
+      setVariantName("");
+      setProductCode("");
+      setSize("");
+      setSellingPrice("");
+      setBarcode("");
+      setDiscountPercentage("");
+      setIsDiscountActive(false);
+      setAttributes([{ name: "", value: "" }]);
+      setErrors({});
+
     } catch (err) {
       console.error("Error submitting form:", err);
-      alert("Something went wrong.");
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -91,11 +245,33 @@ export default function DefaultInputs({
         <div className="flex flex-col md:flex-row gap-6">
           <div className="w-full md:w-1/2">
             <Label>{productNameLabel}</Label>
-            <Input type="text" value={variantName} onChange={(e) => setVariantName(e.target.value)} />
+            <Input 
+              type="text" 
+              value={variantName} 
+              onChange={(e) => {
+                setVariantName(e.target.value);
+                clearFieldError('variantName');
+              }}
+              className={errors.variantName ? 'border-red-500' : ''}
+            />
+            {errors.variantName && (
+              <p className="mt-1 text-sm text-red-500">{errors.variantName}</p>
+            )}
           </div>
           <div className="w-full md:w-1/2">
             <Label>{shopLabel}</Label>
-            <Input type="text" value={productCode} onChange={(e) => setProductCode(e.target.value)} />
+            <Input 
+              type="text" 
+              value={productCode} 
+              onChange={(e) => {
+                setProductCode(e.target.value);
+                clearFieldError('productCode');
+              }}
+              className={errors.productCode ? 'border-red-500' : ''}
+            />
+            {errors.productCode && (
+              <p className="mt-1 text-sm text-red-500">{errors.productCode}</p>
+            )}
           </div>
         </div>
 
@@ -103,49 +279,121 @@ export default function DefaultInputs({
         <div className="flex flex-col md:flex-row gap-6">
           <div className="w-full md:w-1/2">
             <Label>{mainCategoryLabel}</Label>
-            <Input type="text" value={size} onChange={(e) => setSize(e.target.value)} />
+            <Input 
+              type="text" 
+              value={size} 
+              onChange={(e) => {
+                setSize(e.target.value);
+                clearFieldError('size');
+              }}
+              className={errors.size ? 'border-red-500' : ''}
+            />
+            {errors.size && (
+              <p className="mt-1 text-sm text-red-500">{errors.size}</p>
+            )}
           </div>
           <div className="w-full md:w-1/2">
             <Label>{subCategoryLabel}</Label>
-            <Input type="number" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} />
+            <Input 
+              type="number" 
+              value={sellingPrice} 
+              onChange={(e) => {
+                setSellingPrice(e.target.value);
+                clearFieldError('sellingPrice');
+              }}
+              min="0"
+              step="0.01"
+              className={errors.sellingPrice ? 'border-red-500' : ''}
+            />
+            {errors.sellingPrice && (
+              <p className="mt-1 text-sm text-red-500">{errors.sellingPrice}</p>
+            )}
           </div>
         </div>
 
         {/* Row 3: Barcode */}
         <div className="w-full">
           <Label>{barcodeLabel}</Label>
-          <Input type="text" value={barcode} onChange={(e) => setBarcode(e.target.value)} />
+          <Input 
+            type="text" 
+            value={barcode} 
+            onChange={(e) => {
+              setBarcode(e.target.value);
+              clearFieldError('barcode');
+            }}
+            className={errors.barcode ? 'border-red-500' : ''}
+          />
+          {errors.barcode && (
+            <p className="mt-1 text-sm text-red-500">{errors.barcode}</p>
+          )}
         </div>
 
         {/* Row 4: Discount Percentage + Toggle */}
         <div className="flex flex-col md:flex-row gap-6">
           <div className="w-full md:w-1/2">
             <Label>{discountLabel}</Label>
-            <Input type="number" value={discountPercentage} onChange={(e) => setDiscountPercentage(e.target.value)} />
+            <Input 
+              type="number" 
+              value={discountPercentage} 
+              onChange={(e) => {
+                setDiscountPercentage(e.target.value);
+                clearFieldError('discountPercentage');
+              }}
+              min="0"
+              max="100"
+              step="0.01"
+              className={errors.discountPercentage ? 'border-red-500' : ''}
+            />
+            {errors.discountPercentage && (
+              <p className="mt-1 text-sm text-red-500">{errors.discountPercentage}</p>
+            )}
           </div>
           <div className="w-full md:w-1/2 flex items-center gap-2">
-            <input type="checkbox" checked={isDiscountActive} onChange={(e) => setIsDiscountActive(e.target.checked)} />
+            <input 
+              type="checkbox" 
+              checked={isDiscountActive} 
+              onChange={(e) => {
+                setIsDiscountActive(e.target.checked);
+                clearFieldError('discountPercentage');
+              }}
+            />
             <Label>{discountToggleLabel}</Label>
           </div>
         </div>
 
         {/* Row 5: Attributes */}
         <div>
-          <Label>{attributeLabel}</Label>
+          <Label>{attributeLabel} (Optional)</Label>
           {attributes.map((attr, index) => (
-            <div className="flex gap-4 mb-2" key={index}>
-              <Input
-                type="text"
-                value={attr.name}
-                onChange={(e) => handleAttributeChange(index, "name", e.target.value)}
-                placeholder="Attribute Name"
-              />
-              <Input
-                type="text"
-                value={attr.value}
-                onChange={(e) => handleAttributeChange(index, "value", e.target.value)}
-                placeholder="Attribute Value"
-              />
+            <div key={index} className="mb-4">
+              <div className="flex gap-4 mb-2">
+                <Input
+                  type="text"
+                  value={attr.name}
+                  onChange={(e) => handleAttributeChange(index, "name", e.target.value)}
+                  placeholder="Attribute Name"
+                  className={errors.attributes && errors.attributes[index] ? 'border-red-500' : ''}
+                />
+                <Input
+                  type="text"
+                  value={attr.value}
+                  onChange={(e) => handleAttributeChange(index, "value", e.target.value)}
+                  placeholder="Attribute Value"
+                  className={errors.attributes && errors.attributes[index] ? 'border-red-500' : ''}
+                />
+                {attributes.length > 1 && (
+                  <button
+                    className="px-3 py-2 text-sm text-red-600 border border-red-300 rounded-md hover:bg-red-50"
+                    onClick={() => removeAttributeField(index)}
+                    type="button"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              {errors.attributes && errors.attributes[index] && (
+                <p className="text-sm text-red-500">{errors.attributes[index]}</p>
+              )}
             </div>
           ))}
           <button
@@ -158,8 +406,13 @@ export default function DefaultInputs({
         </div>
 
         <div>
-          <Button size="sm" variant="primary" onClick={handleSubmit}>
-            Add Product Variant
+          <Button 
+            size="sm" 
+            variant="primary" 
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Adding Product Variant..." : "Add Product Variant"}
           </Button>
         </div>
       </div>
