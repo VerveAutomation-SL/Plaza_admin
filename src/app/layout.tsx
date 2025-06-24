@@ -3,7 +3,7 @@ import './globals.css';
 
 import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
-import { DropdownProvider } from '@/context/DropdownContext'; // ✅ Import DropdownProvider
+import { DropdownProvider } from '@/context/DropdownContext'; 
 
 const outfit = Outfit({
   subsets: ["latin"],
