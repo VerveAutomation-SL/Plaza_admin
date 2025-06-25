@@ -57,6 +57,11 @@ const navItems: NavItem[] = [
     name: "Business",
     path: "/business",
   },
+    {
+    icon: <CalenderIcon />,
+    name: "Employees",
+    path: "/employee",
+  },
   {
     icon: <CalenderIcon />,
     name: "Point of Sale(POS)",
