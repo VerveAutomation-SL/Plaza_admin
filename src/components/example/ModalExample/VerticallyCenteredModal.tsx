@@ -2,7 +2,7 @@
 import React from "react";
 import ComponentCard from "../../common/ComponentCard";
 import Button from "../../ui/button/Button";
-import { Modal } from "../../ui/modal/UpdateProductVarient";
+import Modal from "../../ui/modal/GenericModal";
 import { useModal } from "@/hooks/useModal";
 
 export default function VerticallyCenteredModal() {
@@ -20,7 +20,6 @@ export default function VerticallyCenteredModal() {
       <Modal
         isOpen={isOpen}
         onClose={closeModal}
-        showCloseButton={false}
         className="max-w-[507px] p-6 lg:p-10"
       >
         <div className="text-center">

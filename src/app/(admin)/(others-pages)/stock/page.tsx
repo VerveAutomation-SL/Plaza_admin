@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+export const dynamic = "force-dynamic";
+
+import React, { useEffect, useState, Suspense } from "react";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import BasicTableOne from "@/components/tables/StockTable";
 import { getAllProducts } from "@/lib/api/productApi";
@@ -25,7 +27,7 @@ interface Product {
   discountSellingPrice: number;
 }
 
-export default function StockPage() {
+function StockPageContent() {
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
   const searchParams = useSearchParams();
@@ -50,7 +52,7 @@ export default function StockPage() {
   );
 
   return (
-    <div>
+    <>
       <PageBreadcrumb pageTitle="Product Stocks" />
       <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
         <div className="mx-auto w-full max-w-[1000px]">
@@ -66,9 +68,20 @@ export default function StockPage() {
           </div>
 
           {/* Table */}
-          <BasicTableOne filteredProducts={filteredProducts} prefillVariantCode={prefillVariantCode} />
+          <BasicTableOne
+            filteredProducts={filteredProducts}
+            prefillVariantCode={prefillVariantCode}
+          />
         </div>
       </div>
-    </div>
+    </>
+  );
+}
+
+export default function StockPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-gray-500">Loading stock page...</div>}>
+      <StockPageContent />
+    </Suspense>
   );
 }

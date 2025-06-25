@@ -13,7 +13,7 @@ import {
   getAllEmployees,
   deleteEmployee,
 } from "@/lib/api/employeeApi";
-import { Modal } from "@/components/ui/modal/UpdateEmployeeModal"; 
+import { Modal } from "@/components/ui/modal/UpdateEmployeeModal";
 
 interface Employee {
   employee_code: string;
@@ -38,7 +38,7 @@ export default function BasicTableOne() {
     try {
       const res = await getAllEmployees();
       setEmployees(res);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to fetch employees:", error);
     }
   };
@@ -51,7 +51,7 @@ export default function BasicTableOne() {
     try {
       await deleteEmployee(employeeCode);
       setEmployees(prev => prev.filter(emp => emp.employee_code !== employeeCode));
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`Failed to delete employee ${employeeCode}:`, error);
     } finally {
       setIsDeleting(null);

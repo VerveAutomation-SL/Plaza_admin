@@ -18,7 +18,19 @@ interface ValidationErrors {
   attributes?: string[];
 }
 
-export default function AddProductVariantPage() {
+interface DefaultInputsProps {
+  cardTitle: string;
+  productNameLabel: string;
+  shopLabel: string;
+  mainCategoryLabel: string;
+  subCategoryLabel: string;
+  barcodeLabel: string;
+  discountLabel: string;
+  discountToggleLabel: string;
+  attributeLabel: string;
+}
+
+export default function AddProductVariantPage(props: DefaultInputsProps) {
   const [variantName, setVariantName] = useState("");
   const [productCode, setProductCode] = useState("");
   const [size, setSize] = useState("");
@@ -110,7 +122,7 @@ export default function AddProductVariantPage() {
     };
 
     try {
-      const res = await addProductVariant(payload);
+      await addProductVariant(payload);
       alert("Product variant added successfully!");
       setVariantName("");
       setProductCode("");
@@ -134,17 +146,17 @@ export default function AddProductVariantPage() {
 
   return (
     <div className="p-6 bg-white border rounded shadow space-y-6">
-      <h2 className="text-xl font-bold">Add New Product Variant</h2>
+      <h2 className="text-xl font-bold">{props.cardTitle}</h2>
 
       {/* Variant Name and Product Dropdown */}
       <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full">
-          <label className="block font-semibold mb-1">Variant Name</label>
+          <label className="block font-semibold mb-1">{props.productNameLabel}</label>
           <input value={variantName} onChange={(e) => setVariantName(e.target.value)} className="w-full border p-2" />
           {errors.variantName && <p className="text-sm text-red-500">{errors.variantName}</p>}
         </div>
         <div className="w-full relative" ref={dropdownRef}>
-          <label className="block font-semibold mb-1">Select Product</label>
+          <label className="block font-semibold mb-1">{props.shopLabel}</label>
           <div
             className="w-full border p-2 cursor-pointer flex justify-between items-center"
             onClick={() => setDropdownOpen(prev => !prev)}
@@ -190,12 +202,12 @@ export default function AddProductVariantPage() {
       {/* Size and Price */}
       <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full">
-          <label className="block font-semibold mb-1">Size</label>
+          <label className="block font-semibold mb-1">{props.mainCategoryLabel}</label>
           <input value={size} onChange={(e) => setSize(e.target.value)} className="w-full border p-2" />
           {errors.size && <p className="text-sm text-red-500">{errors.size}</p>}
         </div>
         <div className="w-full">
-          <label className="block font-semibold mb-1">Selling Price</label>
+          <label className="block font-semibold mb-1">{props.subCategoryLabel}</label>
           <input inputMode="decimal" pattern="[0-9]*" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} className="w-full border p-2" />
           {errors.sellingPrice && <p className="text-sm text-red-500">{errors.sellingPrice}</p>}
         </div>
@@ -203,7 +215,7 @@ export default function AddProductVariantPage() {
 
       {/* Barcode */}
       <div>
-        <label className="block font-semibold mb-1">Barcode</label>
+        <label className="block font-semibold mb-1">{props.barcodeLabel}</label>
         <input value={barcode} onChange={(e) => setBarcode(e.target.value)} className="w-full border p-2" />
         {errors.barcode && <p className="text-sm text-red-500">{errors.barcode}</p>}
       </div>
@@ -211,7 +223,7 @@ export default function AddProductVariantPage() {
       {/* Discount Section */}
       <div className="flex flex-col md:flex-row gap-6 items-center">
         <div className="w-full">
-          <label className="block font-semibold mb-1">Discount Percentage</label>
+          <label className="block font-semibold mb-1">{props.discountLabel}</label>
           <input
             type="number"
             value={discountPercentage}
@@ -227,13 +239,13 @@ export default function AddProductVariantPage() {
             onChange={(e) => setIsDiscountActive(e.target.checked)}
             className="h-6 w-6"
           />
-          <label className="font-semibold">Is Discount Active</label>
+          <label className="font-semibold">{props.discountToggleLabel}</label>
         </div>
       </div>
 
       {/* Attributes */}
       <div>
-        <label className="block font-semibold mb-1">Attributes (Optional)</label>
+        <label className="block font-semibold mb-1">{props.attributeLabel}</label>
         {attributes.map((attr, index) => (
           <div key={index} className="flex gap-2 mb-2">
             <input

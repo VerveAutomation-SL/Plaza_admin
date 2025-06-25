@@ -96,7 +96,7 @@ export default function DefaultInputs({
       email,
     };
     try {
-      const res = await addShop(payload);
+      await addShop(payload);
       alert("Shop added successfully!");
       setShopName("");
       setDescription("");

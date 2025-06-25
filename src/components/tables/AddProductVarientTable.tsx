@@ -12,7 +12,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { getProductByBarcode } from "@/lib/api/productApi";
 import { Eye, Pencil, Trash2 } from "lucide-react";
-import UpdateProductModal from "../ui/modal/UpdateProductVarient";
+import UpdateProductModal from "../ui/modal/UpdateProductVarient"; // ✅ Corrected import (default import)
 import ViewProductVariantModal from "../ui/modal/ViewProductVariantModal";
 
 interface ProductVariant {
