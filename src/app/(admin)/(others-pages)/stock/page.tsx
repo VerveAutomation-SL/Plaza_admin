@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import BasicTableOne from "@/components/tables/StockTable";
 import { getAllProducts } from "@/lib/api/productApi";
+import { useSearchParams } from "next/navigation";
 
 interface Product {
   product_code: string;
@@ -27,6 +28,8 @@ interface Product {
 export default function StockPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+  const prefillVariantCode = searchParams.get("productVarient_code");
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -63,7 +66,7 @@ export default function StockPage() {
           </div>
 
           {/* Table */}
-          <BasicTableOne filteredProducts={filteredProducts} />
+          <BasicTableOne filteredProducts={filteredProducts} prefillVariantCode={prefillVariantCode} />
         </div>
       </div>
     </div>

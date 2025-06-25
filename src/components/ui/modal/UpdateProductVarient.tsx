@@ -1,38 +1,51 @@
 "use client";
-import React, { useRef, useEffect } from "react";
 
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  className?: string;
-  children: React.ReactNode;
-  showCloseButton?: boolean;
-  isFullscreen?: boolean;
+import React, { useEffect, useRef, useState } from "react";
+import { updateProductVariant } from "@/lib/api/productApi";
+
+interface ProductVariant {
+  product_code: string;
+  productVarient_code: string;
+  product_name: string;
+  size: string;
+  barcode: string;
+  shop_id: string;
+  mCategory_code: string;
+  sCategory_code: string;
+  product_description: string;
+  image_url: string;
+  selling_price: number;
+  total_quantity: number;
+  quantity_type: string | null;
+  discount_percentage: number;
+  is_discount_active: boolean;
+  discountSellingPrice: number;
 }
 
-export const Modal: React.FC<ModalProps> = ({
+interface UpdateProductModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  initialData: ProductVariant;
+}
+
+const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
   isOpen,
   onClose,
-  children,
-  className,
-  showCloseButton = true,
-  isFullscreen = false,
+  initialData,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
+  const [formData, setFormData] = useState<ProductVariant>(initialData);
+
+  useEffect(() => {
+    setFormData(initialData);
+  }, [initialData]);
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
+      if (event.key === "Escape") onClose();
     };
-
-    if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
-    }
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
+    if (isOpen) document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen, onClose]);
 
   useEffect(() => {
@@ -42,42 +55,88 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-  const contentClasses = isFullscreen
-    ? "w-full h-full"
-    : "relative w-full rounded-3xl bg-white dark:bg-gray-900";
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await updateProductVariant({
+        ...formData,
+        productVariant_code: formData.productVarient_code,
+      });
+      alert("Product updated successfully");
+      onClose();
+    } catch (error) {
+      console.error("Update failed:", error);
+      alert("Failed to update product");
+    }
+  };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-99999 flex items-center justify-center overflow-y-auto">
-      {!isFullscreen && (
-        <div
-          className="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
-          onClick={onClose}
-        ></div>
-      )}
+      <div
+        className="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
+        onClick={onClose}
+      ></div>
+
       <div
         ref={modalRef}
-        className={`${contentClasses} ${className}`}
+        className="relative w-full max-w-xl rounded-3xl bg-white dark:bg-gray-900 p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        {showCloseButton && (
-          <button
-            onClick={onClose}
-            className="absolute right-3 top-3 z-999 flex h-9.5 w-9.5 items-center justify-center rounded-full bg-gray-100 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white sm:right-6 sm:top-6 sm:h-11 sm:w-11"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M6.04 16.54c-.39.39-.39 1.03 0 1.42s1.03.39 1.42 0l4.54-4.54 4.54 4.54c.39.39 1.03.39 1.42 0s.39-1.03 0-1.42L13.41 12l4.59-4.59c.39-.39.39-1.03 0-1.42s-1.03-.39-1.42 0L12 10.59 7.46 6.04a.996.996 0 10-1.41 1.41L10.59 12 6.04 16.54z"
-                fill="currentColor"
-              />
-            </svg>
+        <button
+          onClick={onClose}
+          className="absolute right-3 top-3 z-10 h-10 w-10 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"
+        >
+          X
+        </button>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <h2 className="text-lg font-semibold">Update Product</h2>
+          <input
+            name="product_name"
+            value={formData.product_name}
+            onChange={handleChange}
+            placeholder="Product Name"
+            className="w-full border p-2"
+          />
+          <input
+            type="number"
+            name="selling_price"
+            value={formData.selling_price}
+            onChange={handleChange}
+            placeholder="Selling Price"
+            className="w-full border p-2"
+          />
+          <input
+            type="number"
+            name="discount_percentage"
+            value={formData.discount_percentage}
+            onChange={handleChange}
+            placeholder="Discount %"
+            className="w-full border p-2"
+          />
+          <input
+            type="number"
+            name="discountSellingPrice"
+            value={formData.discountSellingPrice}
+            onChange={handleChange}
+            placeholder="Discount Price"
+            className="w-full border p-2"
+          />
+
+          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
+            Save Changes
           </button>
-        )}
-        <div className="p-6">{children}</div>
+        </form>
       </div>
     </div>
   );
 };
+
+export default UpdateProductModal;
