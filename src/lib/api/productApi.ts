@@ -24,10 +24,11 @@ export interface AddProductVariant {
 }
 
 export interface StockBatch {
-  productVariant_code: string;
+  variant_id: string;
   quantity: number;
-  batch_number: string;
-  expiry_date?: string;
+  quantity_type: string; 
+  base_price: number;
+  received_at?: string;
 }
 
 export interface ProductVariantUpdate {
