@@ -14,6 +14,7 @@ import { getProductByBarcode } from "@/lib/api/productApi";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import UpdateProductModal from "../ui/modal/UpdateProductVarient"; // ✅ Corrected import (default import)
 import ViewProductVariantModal from "../ui/modal/ViewProductVariantModal";
+import { toast } from "react-hot-toast";
 
 interface ProductVariant {
   product_code: string;
@@ -66,6 +67,44 @@ export default function BasicTableOne() {
     }).toString();
 
     router.push(`/stock?${queryParams}`);
+  };
+
+  const handleDelete = (variant: ProductVariant) => {
+    toast.custom((t) => (
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-lg mt-80">
+        <div className="bg-white dark:bg-gray-800 px-8 py-6 rounded-xl shadow-xl border border-gray-300 max-w-md w-full z-[99999]">
+          <p className="text-gray-800 dark:text-white mb-6 text-center text-lg font-semibold">
+            Are you sure you want to delete this product variant?
+          </p>
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                toast.success("Delete function not yet implemented.", {
+                  style: { top: "5rem" },
+                  position: "top-center",
+                });
+              }}
+              className="px-5 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+            >
+              OK
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                toast.error("Deletion cancelled.", {
+                  style: { top: "5rem" },
+                  position: "top-center",
+                });
+              }}
+              className="px-5 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    ));
   };
 
   return (
@@ -143,7 +182,10 @@ export default function BasicTableOne() {
                           >
                             <Pencil size={16} /> Update
                           </button>
-                          <button className="flex items-center gap-1 rounded-md bg-red-100 px-3 py-1 text-sm text-red-600 hover:bg-red-200">
+                          <button
+                            onClick={() => handleDelete(product)}
+                            className="flex items-center gap-1 rounded-md bg-red-100 px-3 py-1 text-sm text-red-600 hover:bg-red-200"
+                          >
                             <Trash2 size={16} /> Delete
                           </button>
                         </div>

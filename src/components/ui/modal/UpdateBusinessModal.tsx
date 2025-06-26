@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import { updateBusiness } from "@/lib/api/businessApi";
+import { toast } from "react-hot-toast";
 
 interface UpdateBusinessModalProps {
   isOpen: boolean;
@@ -62,11 +63,15 @@ export const Modal: React.FC<UpdateBusinessModalProps> = ({
         description: businessData.description,
       };
       await updateBusiness(businessData.business_code, updatedPayload);
-      alert("Business updated successfully");
+      toast.success("Business updated successfully.", {
+        position: "top-center",
+      });
       onClose();
     } catch (err) {
       console.error(err);
-      alert("Failed to update business");
+      toast.error("Failed to update business.", {
+        position: "top-center",
+      });
     }
   };
 

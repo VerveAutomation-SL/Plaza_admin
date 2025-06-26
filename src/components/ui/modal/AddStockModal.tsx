@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect } from "react";
 import { addStockBatch } from "@/lib/api/productApi";
+import { toast } from "react-hot-toast";
 
 interface AddStockModalProps {
   variantId: string;
@@ -63,11 +64,23 @@ export const Modal: React.FC<AddStockModalProps> = ({
       };
 
       await addStockBatch(payload);
-      alert("Stock added successfully!");
+      toast.success("Stock added successfully!", {
+        position: "top-center",
+        style: {
+          marginTop: "4rem",
+          zIndex: 999999,
+        },
+      });
       onClose();
     } catch (error) {
       console.error("Failed to add stock:", error);
-      alert("Error adding stock. Please try again.");
+      toast.error("Error adding stock. Please try again.", {
+        position: "top-center",
+        style: {
+          marginTop: "4rem",
+          zIndex: 999999,
+        },
+      });
     }
   };
 

@@ -14,6 +14,7 @@ import {
   deleteEmployee,
 } from "@/lib/api/employeeApi";
 import { Modal } from "@/components/ui/modal/UpdateEmployeeModal";
+import { toast } from "react-hot-toast";
 
 interface Employee {
   employee_code: string;
@@ -43,19 +44,56 @@ export default function BasicTableOne() {
     }
   };
 
-  const handleDelete = async (employeeCode: string) => {
-    const confirmDelete = confirm("Are you sure you want to delete this employee?");
-    if (!confirmDelete) return;
-
-    setIsDeleting(employeeCode);
-    try {
-      await deleteEmployee(employeeCode);
-      setEmployees(prev => prev.filter(emp => emp.employee_code !== employeeCode));
-    } catch (error: unknown) {
-      console.error(`Failed to delete employee ${employeeCode}:`, error);
-    } finally {
-      setIsDeleting(null);
-    }
+  const handleDelete = (emp: Employee) => {
+    toast.custom((t) => (
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-lg mt-80">
+        <div className="bg-white dark:bg-gray-800 px-8 py-6 rounded-xl shadow-xl border border-gray-300 max-w-md w-full z-[99999]">
+          <p className="text-gray-800 dark:text-white mb-6 text-center text-lg font-semibold">
+            Are you sure you want to delete this employee?
+          </p>
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={async () => {
+                try {
+                  setIsDeleting(emp.employee_code);
+                  await deleteEmployee(emp.employee_code);
+                  setEmployees(prev => prev.filter(e => e.employee_code !== emp.employee_code));
+                  toast.dismiss(t.id);
+                  toast.success("Employee deleted successfully.", {
+                    style: { top: "5rem" },
+                    position: "top-center",
+                  });
+                } catch (error) {
+                  console.error("Error deleting employee:", error);
+                  toast.dismiss(t.id);
+                  toast.error("Failed to delete employee.", {
+                    style: { top: "5rem" },
+                    position: "top-center",
+                  });
+                } finally {
+                  setIsDeleting(null);
+                }
+              }}
+              className="px-5 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+            >
+              OK
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                toast.error("Deletion cancelled.", {
+                  style: { top: "5rem" },
+                  position: "top-center"
+                });
+              }}
+              className="px-5 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    ));
   };
 
   useEffect(() => {
@@ -108,7 +146,7 @@ export default function BasicTableOne() {
                       /
                       <button
                         className="text-red-500 hover:text-red-700"
-                        onClick={() => handleDelete(emp.employee_code)}
+                        onClick={() => handleDelete(emp)}
                         disabled={isDeleting === emp.employee_code}
                       >
                         {isDeleting === emp.employee_code ? "..." : <Trash2 size={16} />}

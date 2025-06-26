@@ -1,7 +1,9 @@
 "use client";
+
 import React, { useState, useEffect, useRef } from "react";
 import { addProductVariant, getAllProducts } from "@/lib/api/productApi";
 import { AddProductVariant } from "@/lib/api/productApi";
+import { toast } from "react-hot-toast";
 
 interface Attribute {
   name: string;
@@ -123,7 +125,12 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
 
     try {
       await addProductVariant(payload);
-      alert("Product variant added successfully!");
+      toast.success("Product variant added successfully!", {
+        style: {
+          top: "5rem"
+        },
+        position: "top-center"
+      });
       setVariantName("");
       setProductCode("");
       setSize("");
@@ -134,11 +141,53 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
       setAttributes([{ name: "", value: "" }]);
       setErrors({});
     } catch (err) {
-      alert("Error submitting the form. Try again.");
+      toast.error("Error submitting the form. Try again.", {
+        style: {
+          top: "5rem"
+        },
+        position: "top-center"
+      });
       console.error(err);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleConfirm = () => {
+    if (!validateForm()) return;
+
+    toast.custom((t) => (
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-lg mt-80">
+        <div className="bg-white dark:bg-gray-800 px-8 py-6 rounded-xl shadow-xl border border-gray-300 max-w-md w-full z-[99999]">
+          <p className="text-gray-800 dark:text-white mb-6 text-center text-lg font-semibold">
+            Are you sure you want to add this product variant?
+          </p>
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                handleSubmit();
+              }}
+              className="px-5 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+            >
+              OK
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                toast.error("Product variant addition cancelled.", {
+                  style: { top: "5rem" },
+                  position: "top-center"
+                });
+              }}
+              className="px-5 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    ));
   };
 
   const filteredProducts = Array.from(new Map(products.map(p => [p.product_code, p])).values())
@@ -148,7 +197,6 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
     <div className="p-6 bg-white border rounded shadow space-y-6">
       <h2 className="text-xl font-bold">{props.cardTitle}</h2>
 
-      {/* Variant Name and Product Dropdown */}
       <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full">
           <label className="block font-semibold mb-1">{props.productNameLabel}</label>
@@ -199,7 +247,6 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
         </div>
       </div>
 
-      {/* Size and Price */}
       <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full">
           <label className="block font-semibold mb-1">{props.mainCategoryLabel}</label>
@@ -213,14 +260,12 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
         </div>
       </div>
 
-      {/* Barcode */}
       <div>
         <label className="block font-semibold mb-1">{props.barcodeLabel}</label>
         <input value={barcode} onChange={(e) => setBarcode(e.target.value)} className="w-full border p-2" />
         {errors.barcode && <p className="text-sm text-red-500">{errors.barcode}</p>}
       </div>
 
-      {/* Discount Section */}
       <div className="flex flex-col md:flex-row gap-6 items-center">
         <div className="w-full">
           <label className="block font-semibold mb-1">{props.discountLabel}</label>
@@ -243,7 +288,6 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
         </div>
       </div>
 
-      {/* Attributes */}
       <div>
         <label className="block font-semibold mb-1">{props.attributeLabel}</label>
         {attributes.map((attr, index) => (
@@ -270,8 +314,7 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
         </button>
       </div>
 
-      {/* Submit Button */}
-      <button onClick={handleSubmit} disabled={isSubmitting} className="bg-blue-600 text-white px-4 py-2 rounded">
+      <button onClick={handleConfirm} disabled={isSubmitting} className="bg-blue-600 text-white px-4 py-2 rounded">
         {isSubmitting ? "Submitting..." : "Add Product Variant"}
       </button>
     </div>

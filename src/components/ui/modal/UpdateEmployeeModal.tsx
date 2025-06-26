@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect, useState } from "react";
 import { updateEmployee } from "@/lib/api/employeeApi";
+import { toast } from "react-hot-toast";
 
 interface UpdateEmployeeModalProps {
   isOpen: boolean;
@@ -85,11 +86,15 @@ export const Modal: React.FC<UpdateEmployeeModalProps> = ({
         image_url: file ? file.name : employeeData.image_url,
       };
       await updateEmployee(employeeData.employee_code, payload);
-      alert("Employee updated successfully");
+      toast.success("Employee updated successfully.", {
+        position: "top-center",
+      });
       onClose();
     } catch (err) {
       console.error(err);
-      alert("Failed to update employee");
+      toast.error("Failed to update employee.", {
+        position: "top-center",
+      });
     }
   };
 

@@ -11,7 +11,8 @@ import {
 import { Pencil, Trash2 } from "lucide-react";
 import { getBusinesses } from "@/lib/api/businessApi";
 import { Modal } from "../ui/modal/UpdateBusinessModal";
-import type { Business } from "@/lib/api/businessApi"; 
+import type { Business } from "@/lib/api/businessApi";
+import { toast } from "react-hot-toast";
 
 export default function BusinessTable() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -33,6 +34,43 @@ export default function BusinessTable() {
   const handleEditClick = (business: Business) => {
     setSelectedBusiness(business);
     setIsModalOpen(true);
+  };
+
+  const handleDelete = (biz: Business) => {
+    toast.custom((t) => (
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-lg mt-80">
+        <div className="bg-white dark:bg-gray-800 px-8 py-6 rounded-xl shadow-xl border border-gray-300 max-w-md w-full z-[99999]">
+          <p className="text-gray-800 dark:text-white mb-6 text-center text-lg font-semibold">
+            Are you sure you want to delete this business?
+          </p>
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                toast.success("Delete function not yet implemented.", {
+                  style: { top: "5rem" },
+                  position: "top-center",
+                });
+              }}
+              className="px-5 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+            >
+              OK
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                toast.error("Deletion cancelled.", {
+                  style: { top: "5rem" },
+                  position: "top-center" });
+              }}
+              className="px-5 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    ));
   };
 
   return (
@@ -79,9 +117,8 @@ export default function BusinessTable() {
                       </button>
                       /
                       <button
-                        className="text-gray-300 cursor-not-allowed"
-                        title="Delete API not available"
-                        disabled
+                        onClick={() => handleDelete(biz)}
+                        className="text-red-500 hover:text-red-700"
                       >
                         <Trash2 size={16} />
                       </button>

@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useContext } from 'react';
 import ComponentCard from '../../../common/ComponentCard';
 import Label from '../../Label';
@@ -10,6 +11,7 @@ import FileInput from '../../input/FileInput';
 import Button from '@/components/ui/button/Button';
 import { addProduct } from '@/lib/api/productApi';
 import { DropdownContext } from '@/context/DropdownContext';
+import { toast } from 'react-hot-toast';
 
 interface DefaultInputsProps {
   cardTitle: string;
@@ -75,8 +77,6 @@ export default function DefaultInputs({
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
-
     setIsSubmitting(true);
 
     const payload = {
@@ -91,7 +91,7 @@ export default function DefaultInputs({
     try {
       const result = await addProduct(payload);
       console.log("API response:", result);
-      alert("Product added successfully!");
+      toast.success("Product added successfully!");
 
       setProductName("");
       setShopId("");
@@ -102,12 +102,48 @@ export default function DefaultInputs({
       setErrors({});
     } catch (err) {
       console.error("Error submitting form:", err);
-      alert("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleConfirm = () => {
+    if (!validateForm()) return;
+
+   toast.custom((t) => (
+  <div className="fixed inset-0 z-[99999] flex items-center justify-center mt-80">
+    {/* Backdrop blur overlay */}
+    <div className="absolute inset-0 bg-black/50 backdrop-blur-md"></div>
+    
+    {/* Modal content */}
+    <div className="relative bg-white dark:bg-gray-800 px-8 py-6 rounded-xl shadow-xl border border-gray-300 max-w-md w-full mx-4">
+      <p className="text-gray-800 dark:text-white mb-6 text-center text-lg font-semibold">
+        Are you sure you want to add this product?
+      </p>
+      <div className="flex justify-center gap-4">
+        <button
+          onClick={() => {
+            toast.dismiss(t.id);
+            handleSubmit();
+          }}
+          className="px-5 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+        >
+          OK
+        </button>
+        <button
+          onClick={() => {
+            toast.dismiss(t.id);
+            toast.error("Product addition cancelled.");
+          }}
+          className="px-5 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+));}
   return (
     <ComponentCard title={cardTitle}>
       <div className="space-y-6">
@@ -213,7 +249,7 @@ export default function DefaultInputs({
         </div>
 
         <div>
-          <Button size="sm" variant="primary" onClick={handleSubmit} disabled={isSubmitting}>
+          <Button size="sm" variant="primary" onClick={handleConfirm} disabled={isSubmitting}>
             {isSubmitting ? "Adding Product..." : "Add Product"}
           </Button>
         </div>

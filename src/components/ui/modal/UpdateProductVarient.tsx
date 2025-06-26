@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { updateProductVariant } from "@/lib/api/productApi";
+import { toast } from "react-hot-toast";
 
 interface ProductVariant {
   product_code: string;
@@ -67,11 +68,15 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
         ...formData,
         productVariant_code: formData.productVarient_code,
       });
-      alert("Product updated successfully");
+      toast.success("Product updated successfully.", {
+        position: "top-center",
+      });
       onClose();
     } catch (error) {
       console.error("Update failed:", error);
-      alert("Failed to update product");
+      toast.error("Failed to update product.", {
+        position: "top-center",
+      });
     }
   };
 

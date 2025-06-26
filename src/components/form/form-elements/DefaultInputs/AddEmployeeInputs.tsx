@@ -7,6 +7,7 @@ import Input from '../../input/InputField';
 import TextArea from '../../input/TextArea';
 import Button from '@/components/ui/button/Button';
 import { addEmployee } from '@/lib/api/employeeApi';
+import { toast } from 'react-hot-toast';
 
 interface DefaultInputsProps {
   cardTitle: string;
@@ -84,7 +85,10 @@ export default function DefaultInputs({
     setIsSubmitting(true);
     try {
       await addEmployee(formData);
-      alert('Employee added successfully!');
+      toast.success('Employee added successfully!', {
+        style: { top: '5rem' },
+        position: 'top-center'
+      });
       setFormData({
         father_name: '',
         full_name: '',
@@ -101,10 +105,50 @@ export default function DefaultInputs({
       setErrors({});
     } catch (error) {
       console.error('Failed to add employee:', error);
-      alert('Failed to add employee.');
+      toast.error('Failed to add employee.', {
+        style: { top: '5rem' },
+        position: 'top-center'
+      });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleConfirm = () => {
+    if (!validateForm()) return;
+
+    toast.custom((t) => (
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-lg mt-80">
+        <div className="bg-white dark:bg-gray-800 px-8 py-6 rounded-xl shadow-xl border border-gray-300 max-w-md w-full z-[99999]">
+          <p className="text-gray-800 dark:text-white mb-6 text-center text-lg font-semibold">
+            Are you sure you want to add this employee?
+          </p>
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                handleSubmit();
+              }}
+              className="px-5 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+            >
+              OK
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                toast.error('Employee addition cancelled.', {
+                  style: { top: '5rem' },
+                  position: 'top-center'
+                });
+              }}
+              className="px-5 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    ));
   };
 
   return (
@@ -169,7 +213,7 @@ export default function DefaultInputs({
           {errors.shop_id && <p className="text-sm text-red-500">{errors.shop_id}</p>}
         </div>
 
-        <Button size="sm" variant="primary" onClick={handleSubmit} disabled={isSubmitting}>
+        <Button size="sm" variant="primary" onClick={handleConfirm} disabled={isSubmitting}>
           {isSubmitting ? 'Adding...' : 'Add Employee'}
         </Button>
       </div>

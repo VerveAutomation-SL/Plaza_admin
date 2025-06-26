@@ -13,6 +13,7 @@ import Image from "next/image";
 import { getShops, deleteShop } from "@/lib/api/shopApi";
 import { Pencil, Trash2 } from "lucide-react";
 import { Modal } from "../ui/modal/UpdateShopModal";
+import { toast } from "react-hot-toast";
 
 interface Shop {
   id: string;
@@ -50,18 +51,53 @@ export default function BasicTableOne() {
     fetchShops();
   }, []);
 
-  const handleDelete = async (shopCode: string) => {
-    const confirmDelete = confirm("Are you sure you want to delete this shop?");
-    if (!confirmDelete) return;
-
-    try {
-      await deleteShop(shopCode);
-      setShops((prev) => prev.filter((shop) => shop.id !== shopCode));
-      alert("Shop deleted successfully.");
-    } catch (error) {
-      console.error("Error deleting shop:", error);
-      alert("Failed to delete shop.");
-    }
+  const handleDelete = (shop: Shop) => {
+    toast.custom((t) => (
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-lg mt-80">
+        <div className="bg-white dark:bg-gray-800 px-8 py-6 rounded-xl shadow-xl border border-gray-300 max-w-md w-full z-[99999]">
+          <p className="text-gray-800 dark:text-white mb-6 text-center text-lg font-semibold">
+            Are you sure you want to delete this shop?
+          </p>
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={async () => {
+                try {
+                  await deleteShop(shop.id);
+                  setShops((prev) => prev.filter((s) => s.id !== shop.id));
+                  toast.dismiss(t.id);
+                  toast.success("Shop deleted successfully.", {
+                    style: { top: "5rem" },
+                    position: "top-center",
+                  });
+                } catch (error) {
+                  console.error("Error deleting shop:", error);
+                  toast.dismiss(t.id);
+                  toast.error("Failed to delete shop.", {
+                    style: { top: "5rem" },
+                    position: "top-center",
+                  });
+                }
+              }}
+              className="px-5 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+            >
+              OK
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                toast.error("Deletion cancelled.", {
+                  style: { top: "5rem" },
+                  position: "top-center",
+                });
+              }}
+              className="px-5 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    ));
   };
 
   const handleEditClick = (shop: Shop) => {
@@ -127,7 +163,7 @@ export default function BasicTableOne() {
                       /
                       <button
                         className="text-red-500 hover:text-red-700"
-                        onClick={() => handleDelete(shop.id)}
+                        onClick={() => handleDelete(shop)}
                       >
                         <Trash2 size={16} />
                       </button>

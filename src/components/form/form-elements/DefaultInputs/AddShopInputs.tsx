@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { addShop } from '@/lib/api/shopApi';
 import { getBusinesses } from '@/lib/api/businessApi';
+import { toast } from 'react-hot-toast';
 
 interface DefaultInputsProps {
   cardTitle: string;
@@ -97,7 +98,10 @@ export default function DefaultInputs({
     };
     try {
       await addShop(payload);
-      alert("Shop added successfully!");
+      toast.success("Shop added successfully!", {
+        style: { top: "5rem" },
+        position: "top-center"
+      });
       setShopName("");
       setDescription("");
       setBusinessCode("");
@@ -108,10 +112,50 @@ export default function DefaultInputs({
       setErrors({});
     } catch (error) {
       console.error("Error adding shop:", error);
-      alert("Failed to add shop.");
+      toast.error("Failed to add shop.", {
+        style: { top: "5rem" },
+        position: "top-center"
+      });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleConfirm = () => {
+    if (!validateForm()) return;
+
+    toast.custom((t) => (
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-lg mt-80">
+        <div className="bg-white dark:bg-gray-800 px-8 py-6 rounded-xl shadow-xl border border-gray-300 max-w-md w-full z-[99999]">
+          <p className="text-gray-800 dark:text-white mb-6 text-center text-lg font-semibold">
+            Are you sure you want to add this shop?
+          </p>
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                handleSubmit();
+              }}
+              className="px-5 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+            >
+              OK
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                toast.error("Shop addition cancelled.", {
+                  style: { top: "5rem" },
+                  position: "top-center"
+                });
+              }}
+              className="px-5 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    ));
   };
 
   const filteredBusinesses = businesses.filter(b => b.business_name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -225,7 +269,7 @@ export default function DefaultInputs({
       </div>
 
       <button
-        onClick={handleSubmit}
+        onClick={handleConfirm}
         disabled={isSubmitting}
         className="bg-blue-600 text-white px-4 py-2 rounded"
       >
