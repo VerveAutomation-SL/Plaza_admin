@@ -59,13 +59,13 @@ export default function BasicTableOne() {
       <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-lg mt-80">
         <div className="bg-white dark:bg-gray-800 px-8 py-6 rounded-xl shadow-xl border border-gray-300 max-w-md w-full z-[99999]">
           <p className="text-gray-800 dark:text-white mb-6 text-center text-lg font-semibold">
-            Are you sure you want to delete this product variant?
+            Are you sure you want to delete <strong>{variant.product_name}</strong>?
           </p>
           <div className="flex justify-center gap-4">
             <button
               onClick={() => {
                 toast.dismiss(t.id);
-                toast.success("Delete function not yet implemented.", {
+                toast.success(`Deleted ${variant.product_name} (not really, just mocked)`, {
                   style: { top: "5rem" },
                   position: "top-center",
                 });

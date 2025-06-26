@@ -42,6 +42,14 @@ const navItems: NavItem[] = [
       { name: "Product Varient", path: "/product-varient", pro: false },
     ],
   },
+    {
+    icon: <CalenderIcon />,
+    name: "Categories",
+    subItems: [
+      { name: "Main Categories", path: "/main-categories", pro: false },
+      { name: "Sub Categories", path: "/sub-categories", pro: false },
+    ],
+  },
   {
     icon: <CalenderIcon />,
     name: "Stock",

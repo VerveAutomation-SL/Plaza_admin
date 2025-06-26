@@ -80,21 +80,29 @@ export default function POSPage() {
   }, [filteredProducts, currentPage]);
 
   const addToCart = (product: Product) => {
-    setCart((prevCart: CartItem[]) => {
-      const existingItem = prevCart.find(item => item.productVarient_code === product.productVarient_code);
-      if (existingItem) {
-        toast.success("Increased quantity");
-        return prevCart.map(item =>
-          item.productVarient_code === product.productVarient_code
-            ? { ...item, quantity: Math.min(item.quantity + 1, product.total_quantity) }
-            : item
-        );
-      } else {
-        toast.success("Added to cart");
-        return [...prevCart, { ...product, quantity: 1 }];
-      }
-    });
-  };
+  let updatedCart: CartItem[] = [];
+  setCart((prevCart: CartItem[]) => {
+    const existingItem = prevCart.find(item => item.productVarient_code === product.productVarient_code);
+    if (existingItem) {
+      updatedCart = prevCart.map(item =>
+        item.productVarient_code === product.productVarient_code
+          ? { ...item, quantity: Math.min(item.quantity + 1, product.total_quantity) }
+          : item
+      );
+    } else {
+      updatedCart = [...prevCart, { ...product, quantity: 1 }];
+    }
+    return updatedCart;
+  });
+
+  const alreadyInCart = cart.find(item => item.productVarient_code === product.productVarient_code);
+  if (alreadyInCart) {
+    toast.success("Increased quantity");
+  } else {
+    toast.success("Added to cart");
+  }
+};
+
 
   const updateQuantity = (variantCode: string, newQuantity: number) => {
     if (newQuantity <= 0) {

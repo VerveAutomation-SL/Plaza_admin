@@ -41,13 +41,13 @@ export default function BusinessTable() {
       <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-lg mt-80">
         <div className="bg-white dark:bg-gray-800 px-8 py-6 rounded-xl shadow-xl border border-gray-300 max-w-md w-full z-[99999]">
           <p className="text-gray-800 dark:text-white mb-6 text-center text-lg font-semibold">
-            Are you sure you want to delete this business?
+            Are you sure you want to delete <span className="text-red-500">{biz.business_name}</span>?
           </p>
           <div className="flex justify-center gap-4">
             <button
               onClick={() => {
                 toast.dismiss(t.id);
-                toast.success("Delete function not yet implemented.", {
+                toast.success(`Deleted ${biz.business_name} (mock)`, {
                   style: { top: "5rem" },
                   position: "top-center",
                 });
@@ -61,7 +61,8 @@ export default function BusinessTable() {
                 toast.dismiss(t.id);
                 toast.error("Deletion cancelled.", {
                   style: { top: "5rem" },
-                  position: "top-center" });
+                  position: "top-center",
+                });
               }}
               className="px-5 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
             >
