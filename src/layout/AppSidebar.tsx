@@ -3,20 +3,25 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { jwtDecode } from "jwt-decode";
 import { useSidebar } from "../context/SidebarContext";
 import {
   BoxCubeIcon,
-  CalenderIcon,
   ChevronDownIcon,
   GridIcon,
   HorizontaLDots,
   ListIcon,
-  PageIcon,
   TableIcon,
   UserCircleIcon,
 } from "../icons/index";
+import { Warehouse, Store, Building2 } from "lucide-react";
 
-import { Warehouse, Store, Building2 } from "lucide-react"; // ✅ Imported new icons
+interface DecodedToken {
+  role: string;
+  exp: number;
+  iat: number;
+  [key: string]: any;
+}
 
 type NavItem = {
   name: string;
@@ -26,60 +31,30 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
+  { icon: <GridIcon />, name: "Dashboard", path: "/" },
+  { icon: <TableIcon />, name: "Point of Sale(POS)", path: "/pos" },
   {
-    icon: <GridIcon />,
-    name: "Dashboard",
-    path: "/",
-  },
-  {
-    icon: <TableIcon />,
-    name: "Point of Sale(POS)",
-    path: "/pos",
-  },
-  {
-    icon: <BoxCubeIcon />,
-    name: "Product",
+    icon: <BoxCubeIcon />, name: "Product",
     subItems: [
       { name: "Product", path: "/product" },
       { name: "Product Varient", path: "/product-varient" },
     ],
   },
   {
-    icon: <ListIcon />,
-    name: "Categories",
+    icon: <ListIcon />, name: "Categories",
     subItems: [
       { name: "Main Categories", path: "/main-categories" },
       { name: "Sub Categories", path: "/sub-categories" },
     ],
   },
-  {
-    icon: <Warehouse size={20} />, // ✅ Updated
-    name: "Stock",
-    path: "/stock",
-  },
-  {
-    icon: <Store size={20} />, // ✅ Updated
-    name: "Shops",
-    path: "/shop",
-  },
-  {
-    icon: <Building2 size={20} />, // ✅ Updated
-    name: "Business",
-    path: "/business",
-  },
-  {
-    icon: <UserCircleIcon />,
-    name: "Employees",
-    path: "/employee",
-  },
+  { icon: <Warehouse size={20} />, name: "Stock", path: "/stock" },
+  { icon: <Store size={20} />, name: "Shops", path: "/shop" },
+  { icon: <Building2 size={20} />, name: "Business", path: "/business" },
+  { icon: <UserCircleIcon />, name: "Employees", path: "/employee" },
 ];
 
 const othersItems: NavItem[] = [
-  {
-    icon: <UserCircleIcon />,
-    name: "User Profile",
-    path: "/profile",
-  },
+  { icon: <UserCircleIcon />, name: "User Profile", path: "/profile" },
 ];
 
 const AppSidebar: React.FC = () => {
@@ -88,8 +63,23 @@ const AppSidebar: React.FC = () => {
   const [openSubmenu, setOpenSubmenu] = useState<{ type: "main" | "others"; index: number } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>({});
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [role, setRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const isActive = useCallback((path: string) => path === pathname, [pathname]);
+
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (token) {
+      try {
+        const decoded = jwtDecode<DecodedToken>(token);
+        setRole(decoded.role);
+      } catch (err) {
+        console.error("Token decode failed", err);
+      }
+    }
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     let matched = false;
@@ -159,9 +149,12 @@ const AppSidebar: React.FC = () => {
               )}
             </button>
           ) : (
-            <Link href={nav.path || "#"} className={`menu-item group ${
-              isActive(nav.path || "") ? "menu-item-active" : "menu-item-inactive"
-            }`}>
+            <Link
+              href={nav.path || "#"}
+              className={`menu-item group ${
+                isActive(nav.path || "") ? "menu-item-active" : "menu-item-inactive"
+              }`}
+            >
               <span className={`${
                 isActive(nav.path || "") ? "menu-item-icon-active" : "menu-item-icon-inactive"
               }`}>
@@ -207,6 +200,8 @@ const AppSidebar: React.FC = () => {
       ))}
     </ul>
   );
+
+  if (loading) return null;
 
   return (
     <aside

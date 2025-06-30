@@ -35,9 +35,9 @@ export default function SignInForm() {
       const token = res.token;
       const user = res.Adminuser;
 
-      const role = user.role; 
+      const role = user.role;
 
-      if (role === "admin" || role === "cashier") {
+      if (role === "admin" || role === "cashier" || role === "shop") {
         localStorage.setItem("token", token);
         router.push("/");
       } else {

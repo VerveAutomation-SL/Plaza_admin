@@ -5,6 +5,7 @@ import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { DropdownProvider } from '@/context/DropdownContext';
 import { Toaster } from 'react-hot-toast';
+import AccessControlWrapper from '@/components/auth/AccessControlWrapper';
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -26,12 +27,14 @@ export default function RootLayout({
                 toastOptions={{
                   duration: 4000,
                   style: {
-                    marginTop: "4rem", 
+                    marginTop: "4rem",
                     zIndex: 99999,
                   },
                 }}
               />
-              {children}
+              <AccessControlWrapper>
+                {children}
+              </AccessControlWrapper>
             </DropdownProvider>
           </SidebarProvider>
         </ThemeProvider>

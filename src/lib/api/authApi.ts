@@ -7,7 +7,7 @@ export interface AdminRegisterData {
   email: string;
   password: string;
   full_name: string;
-  role: "admin" | "cashier";
+  role: "admin" | "cashier" | "shop";
 }
 
 export interface AdminLoginData {
