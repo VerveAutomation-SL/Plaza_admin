@@ -11,7 +11,7 @@ interface DecodedToken {
   role: string;
   exp: number;
   iat: number;
-  [key: string]: any;
+  [key: string]: string | number | boolean;
 }
 
 export default function AccessControlWrapper({ children }: Props) {
@@ -23,35 +23,37 @@ export default function AccessControlWrapper({ children }: Props) {
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-    if (token) {
-      try {
-        const decoded = jwtDecode<DecodedToken>(token);
-        const role = decoded.role;
-
-        const restrictedRoutes: Record<string, string[]> = {
-          cashier: [
-            "/product", "/product-varient", "/main-categories",
-            "/sub-categories", "/stock", "/shop", "/business", "/employee"
-          ],
-          shop: ["/pos", "/business"],
-        };
-
-        const blockList = restrictedRoutes[role] || [];
-        if (blockList.includes(pathname)) {
-          setAllowed(false);
-          router.replace("/");
-        } else {
-          setAllowed(true);
-          setLoading(false);
-        }
-      } catch (e) {
-        console.error("Invalid token", e);
-        setAllowed(false);
-        router.replace("/");
-      }
-    } else {
-      setAllowed(false);
+    if (!token) {
       router.replace("/");
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode<DecodedToken>(token);
+      const role = decoded.role;
+
+      const restrictedRoutes: Record<string, string[]> = {
+        cashier: [
+          "/product", "/product-varient", "/main-categories",
+          "/sub-categories", "/stock", "/shop", "/business", "/employee"
+        ],
+        shop: ["/pos", "/business"],
+      };
+
+      const blockList = restrictedRoutes[role] || [];
+
+      if (blockList.includes(pathname)) {
+        router.replace("/");
+        return;
+      }
+
+      setAllowed(true);
+    } catch (e) {
+      console.error("Invalid token", e);
+      router.replace("/");
+      return;
+    } finally {
+      setLoading(false);
     }
   }, [pathname, router]);
 

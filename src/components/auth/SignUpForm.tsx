@@ -33,8 +33,13 @@ export default function SignUpForm() {
         role,
       });
       router.push("/signin");
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Signup failed. Try again.");
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "response" in err) {
+        const axiosError = err as { response?: { data?: { message?: string } } };
+        setError(axiosError.response?.data?.message || "Signup failed. Try again.");
+      } else {
+        setError("Signup failed. Try again.");
+      }
     } finally {
       setLoading(false);
     }

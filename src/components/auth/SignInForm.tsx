@@ -1,4 +1,3 @@
-// File: SignInForm.tsx
 "use client";
 import Checkbox from "@/components/form/input/Checkbox";
 import Input from "@/components/form/input/InputField";
@@ -9,12 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { loginAdmin } from "@/lib/api/authApi";
-
-interface DecodedToken {
-  exp: number;
-  iat: number;
-  role: string;
-}
+import axios from "axios";
 
 export default function SignInForm() {
   const router = useRouter();
@@ -44,13 +38,18 @@ export default function SignInForm() {
         setError("Unauthorized role detected.");
         localStorage.clear();
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Login failed. Try again.");
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "Login failed. Try again.");
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred.");
+      }
     } finally {
       setLoading(false);
     }
   };
-
 
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">
@@ -65,14 +64,20 @@ export default function SignInForm() {
       </div>
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
-          <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">Sign In</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Enter your email and password to sign in!</p>
+          <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
+            Sign In
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Enter your email and password to sign in!
+          </p>
 
           <form onSubmit={handleLogin} className="mt-5 space-y-6">
             {error && <p className="text-red-500 text-sm">{error}</p>}
 
             <div>
-              <Label>Email <span className="text-error-500">*</span></Label>
+              <Label>
+                Email <span className="text-error-500">*</span>
+              </Label>
               <Input
                 type="email"
                 placeholder="info@gmail.com"
@@ -83,7 +88,9 @@ export default function SignInForm() {
             </div>
 
             <div>
-              <Label>Password <span className="text-error-500">*</span></Label>
+              <Label>
+                Password <span className="text-error-500">*</span>
+              </Label>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
@@ -108,9 +115,14 @@ export default function SignInForm() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Checkbox checked={isChecked} onChange={setIsChecked} />
-                <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">Keep me logged in</span>
+                <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">
+                  Keep me logged in
+                </span>
               </div>
-              <Link href="/reset-password" className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400">
+              <Link
+                href="/reset-password"
+                className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
+              >
                 Forgot password?
               </Link>
             </div>
@@ -125,7 +137,10 @@ export default function SignInForm() {
           <div className="mt-5">
             <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
               Don&apos;t have an account?{" "}
-              <Link href="/signup" className="text-brand-500 hover:text-brand-600 dark:text-brand-400">
+              <Link
+                href="/signup"
+                className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
+              >
                 Sign Up
               </Link>
             </p>

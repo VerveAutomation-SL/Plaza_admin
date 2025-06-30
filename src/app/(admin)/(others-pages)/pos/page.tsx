@@ -28,6 +28,11 @@ interface CartItem extends Product {
   quantity: number;
 }
 
+interface DecodedToken {
+  role: string;
+  [key: string]: string;
+}
+
 const PRODUCTS_PER_PAGE = 6;
 
 export default function POSPage() {
@@ -81,28 +86,28 @@ export default function POSPage() {
   }, [filteredProducts, currentPage]);
 
   const addToCart = (product: Product) => {
-  let updatedCart: CartItem[] = [];
-  setCart((prevCart: CartItem[]) => {
-    const existingItem = prevCart.find(item => item.productVarient_code === product.productVarient_code);
-    if (existingItem) {
-      updatedCart = prevCart.map(item =>
-        item.productVarient_code === product.productVarient_code
-          ? { ...item, quantity: Math.min(item.quantity + 1, product.total_quantity) }
-          : item
-      );
-    } else {
-      updatedCart = [...prevCart, { ...product, quantity: 1 }];
-    }
-    return updatedCart;
-  });
+    let updatedCart: CartItem[] = [];
+    setCart((prevCart: CartItem[]) => {
+      const existingItem = prevCart.find(item => item.productVarient_code === product.productVarient_code);
+      if (existingItem) {
+        updatedCart = prevCart.map(item =>
+          item.productVarient_code === product.productVarient_code
+            ? { ...item, quantity: Math.min(item.quantity + 1, product.total_quantity) }
+            : item
+        );
+      } else {
+        updatedCart = [...prevCart, { ...product, quantity: 1 }];
+      }
+      return updatedCart;
+    });
 
-  const alreadyInCart = cart.find(item => item.productVarient_code === product.productVarient_code);
-  if (alreadyInCart) {
-    toast.success("Increased quantity");
-  } else {
-    toast.success("Added to cart");
-  }
-};
+    const alreadyInCart = cart.find(item => item.productVarient_code === product.productVarient_code);
+    if (alreadyInCart) {
+      toast.success("Increased quantity");
+    } else {
+      toast.success("Added to cart");
+    }
+  };
 
 
   const updateQuantity = (variantCode: string, newQuantity: number) => {
@@ -137,41 +142,40 @@ export default function POSPage() {
   const total = subtotal - discountAmount;
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
- const handleOrder = async () => {
-  if (cart.length === 0) {
-    toast.error("Cart is empty");
-    return;
-  }
+  const handleOrder = async () => {
+    if (cart.length === 0) {
+      toast.error("Cart is empty");
+      return;
+    }
 
-  const token = localStorage.getItem("token");
-  if (!token) {
-    toast.error("Not authenticated");
-    return;
-  }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Not authenticated");
+      return;
+    }
 
-  try {
-    // Decode cashier ID from token (assuming JWT contains it)
-    const decoded: any = JSON.parse(atob(token.split('.')[1]));
-    const cashierId = decoded.user_id || decoded.id || "U001"; // fallback or change based on your backend
+    try {
+      const decoded = JSON.parse(atob(token.split('.')[1])) as DecodedToken;
+      const cashierId = decoded.user_id || decoded.id || "U001";
 
-    const payload = {
-      cashier_id: cashierId,
-      items: cart.map((item) => ({
-        variant_id: item.productVarient_code,
-        quantity: item.quantity,
-      })),
-    };
+      const payload = {
+        cashier_id: cashierId,
+        items: cart.map((item) => ({
+          variant_id: item.productVarient_code,
+          quantity: item.quantity,
+        })),
+      };
 
-    await placeOrder(payload);
+      await placeOrder(payload);
 
-    toast.success("Order placed successfully!");
-    setCart([]);
-    setDiscount(0);
-  } catch (error) {
-    console.error("Order failed", error);
-    toast.error("Order failed. Please try again.");
-  }
-};
+      toast.success("Order placed successfully!");
+      setCart([]);
+      setDiscount(0);
+    } catch (error) {
+      console.error("Order failed", error);
+      toast.error("Order failed. Please try again.");
+    }
+  };
 
 
   return (
@@ -278,8 +282,8 @@ export default function POSPage() {
                     onClick={() => addToCart(product)}
                     disabled={isOutOfStock || isMaxQuantity}
                     className={`w-full mt-auto py-2 px-4 rounded-full text-sm font-medium transition-colors ${isOutOfStock || isMaxQuantity
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'bg-blue-500 hover:bg-blue-600 text-white'
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
                       }`}
                   >
                     <Plus className="h-4 w-4 inline mr-1" />
@@ -410,8 +414,8 @@ export default function POSPage() {
             onClick={handleOrder}
             disabled={cart.length === 0}
             className={`flex items-center justify-center gap-2 w-full py-4 rounded-full font-semibold transition-colors ${cart.length === 0
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-black hover:bg-gray-800 text-white"
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-black hover:bg-gray-800 text-white"
               }`}
           >
             <ShoppingCart className="h-5 w-5" />
