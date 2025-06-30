@@ -14,7 +14,7 @@ import {
   TableIcon,
   UserCircleIcon,
 } from "../icons/index";
-import { Warehouse, Store, Building2 } from "lucide-react";
+import { Warehouse, Store, Building2, ClipboardList } from "lucide-react";
 
 interface DecodedToken {
   role: string;
@@ -49,7 +49,8 @@ const navItems: NavItem[] = [
   },
   { icon: <Warehouse size={20} />, name: "Stock", path: "/stock" },
   { icon: <Store size={20} />, name: "Shops", path: "/shop" },
-  { icon: <Building2 size={20} />, name: "Business", path: "/business" },
+  { icon: <Building2 size={20} />, name: "Business", path: "/business" },  
+  { icon: <ClipboardList size={20} />, name: "Orders", path: "/orders" },
   { icon: <UserCircleIcon />, name: "Employees", path: "/employee" },
 ];
 

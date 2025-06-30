@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Search, ShoppingCart, Plus, Minus, X } from "lucide-react";
 import { getAllProducts } from "@/lib/api/productApi";
+import { placeOrder } from "@/lib/api/orderApi";
 import toast, { Toaster } from "react-hot-toast";
 
 interface Product {
@@ -136,16 +137,42 @@ export default function POSPage() {
   const total = subtotal - discountAmount;
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const handleOrder = () => {
-    if (cart.length === 0) {
-      toast.error("Cart is empty");
-      return;
-    }
+ const handleOrder = async () => {
+  if (cart.length === 0) {
+    toast.error("Cart is empty");
+    return;
+  }
 
-    toast.success("Order Placed!");
+  const token = localStorage.getItem("token");
+  if (!token) {
+    toast.error("Not authenticated");
+    return;
+  }
+
+  try {
+    // Decode cashier ID from token (assuming JWT contains it)
+    const decoded: any = JSON.parse(atob(token.split('.')[1]));
+    const cashierId = decoded.user_id || decoded.id || "U001"; // fallback or change based on your backend
+
+    const payload = {
+      cashier_id: cashierId,
+      items: cart.map((item) => ({
+        variant_id: item.productVarient_code,
+        quantity: item.quantity,
+      })),
+    };
+
+    await placeOrder(payload);
+
+    toast.success("Order placed successfully!");
     setCart([]);
     setDiscount(0);
-  };
+  } catch (error) {
+    console.error("Order failed", error);
+    toast.error("Order failed. Please try again.");
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gray-50 text-black grid grid-cols-3 gap-6 p-6">
