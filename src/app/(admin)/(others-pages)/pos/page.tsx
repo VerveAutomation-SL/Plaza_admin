@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { Search, ShoppingCart, Plus, Minus, X } from "lucide-react";
+import { Search, ShoppingCart, Plus, Minus, X, Eye } from "lucide-react";
 import { getAllProducts } from "@/lib/api/productApi";
 import { placeOrder } from "@/lib/api/orderApi";
 import toast, { Toaster } from "react-hot-toast";
@@ -263,37 +263,55 @@ export default function POSPage() {
                   key={product.productVarient_code}
                   className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow text-sm flex flex-col h-full"
                 >
-                  <h3 className="font-semibold text-gray-800">{product.product_name}</h3>
-                  <p className="text-gray-600">Size: {product.size}</p>
-                  <p className="text-gray-600">Barcode: {product.barcode}</p>
-                  <p className="text-gray-600">Description: {product.product_description}</p>
-                  <p className="text-gray-600">Main Category: {product.mCategory_code}</p>
-                  <p className="text-gray-600">Sub Category: {product.sCategory_code}</p>
-                  <p className="text-gray-600">Shop ID: {product.shop_id}</p>
-                  <p className="text-green-600 font-bold my-1">
-                    ${displayPrice}
+                  <img
+                    src={product.image_url || "/placeholder.png"}
+                    alt={product.product_name}
+                    className="h-32 w-full object-contain mb-2 rounded"
+                  />
+
+
+                  <h3 className="font-semibold text-gray-800 text-base">{product.product_name}</h3>
+                  <p className="text-gray-500 mb-1">
+                    Stock:{" "}
+                    <span className={product.total_quantity > 0 ? "text-green-600" : "text-red-500"}>
+                      {product.total_quantity > 0 ? `${product.total_quantity} available` : "Out of stock"}
+                    </span>
+                  </p>
+
+                  <p className="text-gray-800 font-bold mb-2">
+                    LKR {displayPrice.toFixed(2)}{" "}
                     {product.is_discount_active && (
-                      <span className="line-through text-gray-400 ml-2 text-sm">${product.selling_price}</span>
+                      <span className="text-gray-400 line-through ml-2 text-sm">
+                        LKR {product.selling_price.toFixed(2)}
+                      </span>
                     )}
                   </p>
-                  <p className="text-gray-500 mb-3">Stock: {product.total_quantity}</p>
 
-                  <button
-                    onClick={() => addToCart(product)}
-                    disabled={isOutOfStock || isMaxQuantity}
-                    className={`w-full mt-auto py-2 px-4 rounded-full text-sm font-medium transition-colors ${isOutOfStock || isMaxQuantity
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-blue-500 hover:bg-blue-600 text-white'
-                      }`}
-                  >
-                    <Plus className="h-4 w-4 inline mr-1" />
-                    {isOutOfStock ? 'Out of Stock' : isMaxQuantity ? 'Max Qty' : 'Add to Cart'}
-                  </button>
+                  <div className="mt-auto flex justify-between gap-2">
+                    <button
+                      onClick={() => console.log("View", product.product_code)}
+                      className="flex items-center justify-center w-10 h-10 rounded bg-gray-100 hover:bg-gray-200 text-gray-700"
+                    >
+                      <Eye className="h-5 w-5" />
+                    </button>
+
+                    <button
+                      onClick={() => addToCart(product)}
+                      disabled={isOutOfStock || isMaxQuantity}
+                      className={`flex-1 py-2 px-4 rounded text-sm font-medium transition-colors ${isOutOfStock || isMaxQuantity
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-blue-500 hover:bg-blue-600 text-white"
+                        }`}
+                    >
+                      {isOutOfStock ? "Out of Stock" : isMaxQuantity ? "Max Qty" : "Add to Cart"}
+                    </button>
+                  </div>
                 </div>
               );
             })}
           </div>
         )}
+
         {/* Pagination */}
         {!isLoading && paginatedProducts.length > 0 && (
           <div className="flex justify-center items-center gap-4 mt-6">

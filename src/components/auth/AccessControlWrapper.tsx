@@ -24,7 +24,7 @@ export default function AccessControlWrapper({ children }: Props) {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     if (!token) {
-      router.replace("/");
+      router.replace("/signin"); // ✅ Redirect to login page
       return;
     }
 
@@ -43,21 +43,23 @@ export default function AccessControlWrapper({ children }: Props) {
       const blockList = restrictedRoutes[role] || [];
 
       if (blockList.includes(pathname)) {
-        router.replace("/");
+        router.replace("/"); // ✅ Redirect to home if blocked
         return;
       }
 
       setAllowed(true);
     } catch (e) {
       console.error("Invalid token", e);
-      router.replace("/");
+      router.replace("/signin"); // ✅ Handle broken/expired token
       return;
     } finally {
       setLoading(false);
     }
   }, [pathname, router]);
 
-  if (loading || !allowed) return null;
+  if (loading || !allowed) {
+    return <div className="p-4 text-center">Loading...</div>; // optional loading UI
+  }
 
   return <>{children}</>;
 }
