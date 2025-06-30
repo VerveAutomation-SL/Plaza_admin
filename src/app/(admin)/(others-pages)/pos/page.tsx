@@ -5,6 +5,8 @@ import { Search, ShoppingCart, Plus, Minus, X, Eye } from "lucide-react";
 import { getAllProducts } from "@/lib/api/productApi";
 import { placeOrder } from "@/lib/api/orderApi";
 import toast, { Toaster } from "react-hot-toast";
+import ViewProductModal from "@/components/ui/modal/ViewProductModal";
+
 
 interface Product {
   product_code: string;
@@ -21,7 +23,8 @@ interface Product {
   sCategory_code: string;
   product_description: string;
   shop_id: string;
-  image_url?: string;
+  image_url: string;
+  quantity_type?: string | null;
 }
 
 interface CartItem extends Product {
@@ -141,6 +144,8 @@ export default function POSPage() {
   const discountAmount = (subtotal * discount) / 100;
   const total = subtotal - discountAmount;
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
 
   const handleOrder = async () => {
     if (cart.length === 0) {
@@ -251,66 +256,76 @@ export default function POSPage() {
             <p>No products match your search or filters.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {paginatedProducts.map((product) => {
-              const cartItem = cart.find(item => item.productVarient_code === product.productVarient_code);
-              const isOutOfStock = product.total_quantity === 0;
-              const isMaxQuantity = cartItem && cartItem.quantity >= product.total_quantity;
-              const displayPrice = product.is_discount_active ? product.discountSellingPrice : product.selling_price;
+          <>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {paginatedProducts.map((product) => {
+        const cartItem = cart.find(item => item.productVarient_code === product.productVarient_code);
+        const isOutOfStock = product.total_quantity === 0;
+        const isMaxQuantity = cartItem && cartItem.quantity >= product.total_quantity;
+        const displayPrice = product.is_discount_active ? product.discountSellingPrice : product.selling_price;
 
-              return (
-                <div
-                  key={product.productVarient_code}
-                  className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow text-sm flex flex-col h-full"
-                >
-                  <img
-                    src={product.image_url || "/placeholder.png"}
-                    alt={product.product_name}
-                    className="h-32 w-full object-contain mb-2 rounded"
-                  />
+        return (
+          <div
+            key={product.productVarient_code}
+            className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow text-sm flex flex-col h-full"
+          >
+            <img
+              src={product.image_url || "/placeholder.png"}
+              alt={product.product_name}
+              className="h-32 w-full object-contain mb-2 rounded"
+            />
 
+            <h3 className="font-semibold text-gray-800 text-base">{product.product_name}</h3>
+            <p className="text-gray-500 mb-1">
+              Stock:{" "}
+              <span className={product.total_quantity > 0 ? "text-green-600" : "text-red-500"}>
+                {product.total_quantity > 0 ? `${product.total_quantity} available` : "Out of stock"}
+              </span>
+            </p>
 
-                  <h3 className="font-semibold text-gray-800 text-base">{product.product_name}</h3>
-                  <p className="text-gray-500 mb-1">
-                    Stock:{" "}
-                    <span className={product.total_quantity > 0 ? "text-green-600" : "text-red-500"}>
-                      {product.total_quantity > 0 ? `${product.total_quantity} available` : "Out of stock"}
-                    </span>
-                  </p>
+            <p className="text-gray-800 font-bold mb-2">
+              LKR {displayPrice.toFixed(2)}{" "}
+              {product.is_discount_active && (
+                <span className="text-gray-400 line-through ml-2 text-sm">
+                  LKR {product.selling_price.toFixed(2)}
+                </span>
+              )}
+            </p>
 
-                  <p className="text-gray-800 font-bold mb-2">
-                    LKR {displayPrice.toFixed(2)}{" "}
-                    {product.is_discount_active && (
-                      <span className="text-gray-400 line-through ml-2 text-sm">
-                        LKR {product.selling_price.toFixed(2)}
-                      </span>
-                    )}
-                  </p>
+            <div className="mt-auto flex justify-between gap-2">
+              <button
+                onClick={() => setSelectedProduct(product)} // ✅ Trigger modal here
+                className="flex items-center justify-center w-10 h-10 rounded bg-gray-100 hover:bg-gray-200 text-gray-700"
+              >
+                <Eye className="h-5 w-5" />
+              </button>
 
-                  <div className="mt-auto flex justify-between gap-2">
-                    <button
-                      onClick={() => console.log("View", product.product_code)}
-                      className="flex items-center justify-center w-10 h-10 rounded bg-gray-100 hover:bg-gray-200 text-gray-700"
-                    >
-                      <Eye className="h-5 w-5" />
-                    </button>
-
-                    <button
-                      onClick={() => addToCart(product)}
-                      disabled={isOutOfStock || isMaxQuantity}
-                      className={`flex-1 py-2 px-4 rounded text-sm font-medium transition-colors ${isOutOfStock || isMaxQuantity
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-blue-500 hover:bg-blue-600 text-white"
-                        }`}
-                    >
-                      {isOutOfStock ? "Out of Stock" : isMaxQuantity ? "Max Qty" : "Add to Cart"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+              <button
+                onClick={() => addToCart(product)}
+                disabled={isOutOfStock || isMaxQuantity}
+                className={`flex-1 py-2 px-4 rounded text-sm font-medium transition-colors ${
+                  isOutOfStock || isMaxQuantity
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-blue-500 hover:bg-blue-600 text-white"
+                }`}
+              >
+                {isOutOfStock ? "Out of Stock" : isMaxQuantity ? "Max Qty" : "Add to Cart"}
+              </button>
+            </div>
           </div>
-        )}
+        );
+      })}
+    </div>
+
+    {selectedProduct && (
+  <ViewProductModal
+    isOpen={true}
+    onClose={() => setSelectedProduct(null)}
+    variants={[selectedProduct]} // 👈 wrap it in array
+  />
+)}
+  </>
+)}
 
         {/* Pagination */}
         {!isLoading && paginatedProducts.length > 0 && (

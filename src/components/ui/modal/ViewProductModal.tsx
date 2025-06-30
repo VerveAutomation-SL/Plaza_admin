@@ -17,7 +17,7 @@ interface ProductVariant {
   image_url: string;
   selling_price: number;
   total_quantity: number;
-  quantity_type: string | null;
+  quantity_type?: string | null;
   discount_percentage: number;
   is_discount_active: boolean;
   discountSellingPrice: number;
