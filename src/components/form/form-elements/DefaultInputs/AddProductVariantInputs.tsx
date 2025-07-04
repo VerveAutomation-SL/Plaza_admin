@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { addProductVariant, getAllProducts } from "@/lib/api/productApi";
-import { AddProductVariant } from "@/lib/api/productApi";
+import { AddProductVariant , uploadFiles} from "@/lib/api/productApi";
 import { toast } from "react-hot-toast";
+import Label from '../../Label';
+import FileInput from '../../input/FileInput';
 
 interface Attribute {
   name: string;
@@ -18,6 +20,7 @@ interface ValidationErrors {
   barcode?: string;
   discountPercentage?: string;
   attributes?: string[];
+  imageUrl?: string;
 }
 
 interface DefaultInputsProps {
@@ -30,6 +33,7 @@ interface DefaultInputsProps {
   discountLabel: string;
   discountToggleLabel: string;
   attributeLabel: string;
+  image_url:string;
 }
 
 export default function AddProductVariantPage(props: DefaultInputsProps) {
@@ -48,6 +52,8 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [image, setimage] = useState<File | null>(null);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -106,9 +112,31 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
     setAttributes(newAttrs);
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+          if (event?.target.files && event.target.files) {
+              setimage(event.target.files[0])
+          }
+  };
+
   const handleSubmit = async () => {
-    if (!validateForm()) return;
-    setIsSubmitting(true);
+  if (!validateForm()) return;
+  setIsSubmitting(true);
+
+  let uploadedImg = "";
+
+  try {
+    // Upload image if selected
+    if (image) {
+      const uploadResponse = await uploadFiles([image]) as { status: number; imageUrl: string };
+      console.log(uploadResponse, "uploadResponse");
+
+      if (uploadResponse.imageUrl && uploadResponse.status === 200) {
+        uploadedImg = uploadResponse.imageUrl;
+        console.log("Image uploaded to:", uploadedImg);
+      } else {
+        console.error("Image URL not found in upload response.");
+      }
+    }
 
     const validAttributes = attributes.filter(attr => attr.name && attr.value);
 
@@ -121,37 +149,36 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
       discount_percentage: parseFloat(discountPercentage) || 0,
       is_discount_active: isDiscountActive,
       attributes: validAttributes,
+      image_url: uploadedImg, // ✅ Add image URL to payload if required
     };
 
-    try {
-      await addProductVariant(payload);
-      toast.success("Product variant added successfully!", {
-        style: {
-          top: "5rem"
-        },
-        position: "top-center"
-      });
-      setVariantName("");
-      setProductCode("");
-      setSize("");
-      setSellingPrice("");
-      setBarcode("");
-      setDiscountPercentage("");
-      setIsDiscountActive(false);
-      setAttributes([{ name: "", value: "" }]);
-      setErrors({});
-    } catch (err) {
-      toast.error("Error submitting the form. Try again.", {
-        style: {
-          top: "5rem"
-        },
-        position: "top-center"
-      });
-      console.error(err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    await addProductVariant(payload);
+    toast.success("Product variant added successfully!", {
+      style: { top: "5rem" },
+      position: "top-center"
+    });
+
+    // Reset form fields
+    setVariantName("");
+    setProductCode("");
+    setSize("");
+    setSellingPrice("");
+    setBarcode("");
+    setDiscountPercentage("");
+    setIsDiscountActive(false);
+    setAttributes([{ name: "", value: "" }]);
+    setErrors({});
+  } catch (err) {
+    toast.error("Error submitting the form. Try again.", {
+      style: { top: "5rem" },
+      position: "top-center"
+    });
+    console.error(err);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   const handleConfirm = () => {
     if (!validateForm()) return;
@@ -287,6 +314,16 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
           <label className="font-semibold">{props.discountToggleLabel}</label>
         </div>
       </div>
+
+       {/* Image upload */}
+        <div>
+          <Label>Upload file</Label>
+          <FileInput
+            onChange={handleImageUpload}
+            className={errors.imageUrl ? 'border-red-500' : ''}
+          />
+          {errors.imageUrl && <p className="mt-1 text-sm text-red-500">{errors.imageUrl}</p>}
+        </div>
 
       <div>
         <label className="block font-semibold mb-1">{props.attributeLabel}</label>

@@ -7,7 +7,6 @@ import Input from '../../input/InputField';
 import Select from '../../Select';
 import { ChevronDownIcon } from '../../../../icons';
 import TextArea from '../../input/TextArea';
-import FileInput from '../../input/FileInput';
 import Button from '@/components/ui/button/Button';
 import { addProduct } from '@/lib/api/productApi';
 import { DropdownContext } from '@/context/DropdownContext';
@@ -44,7 +43,6 @@ export default function DefaultInputs({
   const [mainCategoryCode, setMainCategoryCode] = useState("");
   const [subCategoryCode, setSubCategoryCode] = useState("");
   const [description, setDescription] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
 
   const { shopOptions, mainCategoryOptions, subCategoryOptions } = useContext(DropdownContext);
 
@@ -79,16 +77,16 @@ export default function DefaultInputs({
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    const payload = {
-      shop_id: shopId,
-      product_name: productName.trim(),
-      mCategory_code: mainCategoryCode,
-      sCategory_code: subCategoryCode,
-      product_description: description.trim(),
-      image_url: imageUrl,
-    };
 
     try {
+        const payload = {
+          shop_id: shopId,
+          product_name: productName.trim(),
+          mCategory_code: mainCategoryCode,
+          sCategory_code: subCategoryCode,
+          product_description: description.trim(),
+        };
+
       const result = await addProduct(payload);
       console.log("API response:", result);
       toast.success("Product added successfully!");
@@ -98,7 +96,6 @@ export default function DefaultInputs({
       setMainCategoryCode("");
       setSubCategoryCode("");
       setDescription("");
-      setImageUrl("");
       setErrors({});
     } catch (err) {
       console.error("Error submitting form:", err);
@@ -234,20 +231,6 @@ export default function DefaultInputs({
           {errors.description && <p className="mt-1 text-sm text-red-500">{errors.description}</p>}
           <p className="mt-1 text-xs text-gray-500">{description.length}/1000 characters</p>
         </div>
-
-        <div>
-          <Label>Upload file</Label>
-          <FileInput
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              setImageUrl(file ? file.name : "");
-              clearFieldError('imageUrl');
-            }}
-            className={errors.imageUrl ? 'border-red-500' : ''}
-          />
-          {errors.imageUrl && <p className="mt-1 text-sm text-red-500">{errors.imageUrl}</p>}
-        </div>
-
         <div>
           <Button size="sm" variant="primary" onClick={handleConfirm} disabled={isSubmitting}>
             {isSubmitting ? "Adding Product..." : "Add Product"}

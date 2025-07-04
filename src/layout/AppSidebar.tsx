@@ -20,7 +20,7 @@ interface DecodedToken {
   role: string;
   exp: number;
   iat: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 type NavItem = {
@@ -64,7 +64,7 @@ const AppSidebar: React.FC = () => {
   const [openSubmenu, setOpenSubmenu] = useState<{ type: "main" | "others"; index: number } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>({});
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [role, setRole] = useState<string | null>(null);
+  const [, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const isActive = useCallback((path: string) => path === pathname, [pathname]);

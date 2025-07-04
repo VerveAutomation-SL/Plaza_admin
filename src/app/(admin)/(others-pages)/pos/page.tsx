@@ -6,12 +6,14 @@ import { getAllProducts } from "@/lib/api/productApi";
 import { placeOrder } from "@/lib/api/orderApi";
 import toast, { Toaster } from "react-hot-toast";
 import ViewProductModal from "@/components/ui/modal/ViewProductModal";
+import Image from "next/image";
 
 
 interface Product {
   product_code: string;
   productVarient_code: string;
   product_name: string;
+  productVarient_name: string;
   size: string;
   barcode: string;
   selling_price: number;
@@ -50,6 +52,8 @@ export default function POSPage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [onlyDiscounted, setOnlyDiscounted] = useState(false);
   const [onlyInStock, setOnlyInStock] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -66,6 +70,28 @@ export default function POSPage() {
     };
     fetchProducts();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".suggestion-box")) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const suggestions = useMemo(() => {
+    if (!searchTerm || searchTerm.length < 2) return [];
+    return products
+      .filter((product) =>
+        product.product_name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .slice(0, 5); // top 5
+  }, [searchTerm, products]);
 
   const categories = useMemo(() => {
     const all = products.map(p => p.mCategory_code);
@@ -198,12 +224,33 @@ export default function POSPage() {
             placeholder="Search products..."
             value={searchTerm}
             onChange={(e) => {
-              setSearchTerm(e.target.value);
+              const value = e.target.value;
+              setSearchTerm(value);
               setCurrentPage(1);
+              setShowSuggestions(value.length >= 2);
             }}
             className="w-full border-2 border-gray-200 rounded-full py-3 px-4 pl-12 focus:outline-none focus:border-blue-500 transition-colors"
           />
           <Search className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
+
+          {/* 🔽 Suggestion Dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <ul className="absolute z-10 left-0 right-0 bg-white border border-gray-200 rounded-b-lg shadow-lg max-h-60 overflow-y-auto">
+              {suggestions.map((suggestion) => (
+                <li
+                  key={suggestion.productVarient_code}
+                  className="px-4 py-2 hover:bg-blue-100 cursor-pointer text-sm"
+                  onClick={() => {
+                    setSearchTerm(suggestion.product_name);         // auto-fill input
+                    setSelectedProduct(suggestion);                 // open ViewProductModal
+                    setShowSuggestions(false);                      // hide dropdown
+                  }}
+                >
+                  {suggestion.product_name}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Filters */}
@@ -269,13 +316,15 @@ export default function POSPage() {
             key={product.productVarient_code}
             className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow text-sm flex flex-col h-full"
           >
-            <img
+            <Image
               src={product.image_url || "/placeholder.png"}
               alt={product.product_name}
-              className="h-32 w-full object-contain mb-2 rounded"
+              width={300}
+              height={128}
+              className="w-full h-32 object-contain mb-2 rounded"
             />
 
-            <h3 className="font-semibold text-gray-800 text-base">{product.product_name}</h3>
+            <h3 className="font-semibold text-gray-800 text-base">{product.productVarient_name}</h3>
             <p className="text-gray-500 mb-1">
               Stock:{" "}
               <span className={product.total_quantity > 0 ? "text-green-600" : "text-red-500"}>
@@ -326,7 +375,6 @@ export default function POSPage() {
 )}
   </>
 )}
-
         {/* Pagination */}
         {!isLoading && paginatedProducts.length > 0 && (
           <div className="flex justify-center items-center gap-4 mt-6">
