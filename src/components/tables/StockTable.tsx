@@ -1,7 +1,8 @@
 "use client";
-
 import React, { useState } from "react";
 import { Modal } from "../ui/modal/AddStockModal";
+import Image from "next/image";
+
 
 interface Product {
   product_code: string;
@@ -77,10 +78,12 @@ const BasicTableOne: React.FC<StockTableProps> = ({
               <tr key={product.productVarient_code} className="border-t">
                 <td className="p-3 border">
                   {product.image_url ? (
-                    <img
-                      src={product.image_url}
+                    <Image
+                      src={product.image_url || "/placeholder.png"} // fallback if image is missing
                       alt={product.product_name}
-                      className="h-12 w-12 object-contain"
+                      width={48} // 12 x 4 = 48px
+                      height={48} // 12 x 4 = 48px
+                      className="object-contain rounded"
                     />
                   ) : (
                     <span className="text-gray-400">No Image</span>

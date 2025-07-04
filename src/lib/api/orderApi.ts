@@ -2,7 +2,7 @@
 import axios from "axios";
 
 // Base API URL
-const BASE_URL = "https://plaza.verveautomation.com/api/auth";
+const BASE_URL = "http://localhost:3000/api/auth";
 
 // 🔷 Interface Definitions
 export interface OrderItem {
@@ -37,6 +37,7 @@ export async function placeOrder(payload: PlaceOrderPayload) {
       },
     });
     return response.data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     throw error.response?.data || { message: "Order placement failed." };
   }

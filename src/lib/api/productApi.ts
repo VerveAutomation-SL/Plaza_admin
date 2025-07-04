@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface UploadResponse {
@@ -30,6 +31,7 @@ export interface AddProductVariant {
   size: string;
   selling_price: number;
   discount_percentage: number;
+  image_url:string;
   is_discount_active: boolean;
   attributes: { name: string; value: string }[];
 }
@@ -59,6 +61,27 @@ export interface ActivateDiscountPayload {
   productVariant_code: string;
   is_discount_active: boolean;
 }
+
+
+export interface Product {
+  product_code: string;
+  productVarient_code: string;
+  product_name: string;
+  size: string;
+  barcode: string;
+  selling_price: number;
+  discount_percentage: number;
+  is_discount_active: boolean;
+  discountSellingPrice: number;
+  total_quantity: number;
+  mCategory_code: string;
+  sCategory_code: string;
+  product_description: string;
+  shop_id: string;
+  image_url: string;
+  quantity_type?: string | null;
+}
+
 
 // API functions
 export const addProduct = async (data: AddProduct) => {
@@ -179,3 +202,8 @@ export const uploadFiles = async (
         };
     }
 };
+
+export async function searchProducts(query: string): Promise<Product[]> {
+  const res = await axios.get(`${API_BASE_URL}/api/products/search?q=${encodeURIComponent(query)}`);
+  return res.data;
+}
