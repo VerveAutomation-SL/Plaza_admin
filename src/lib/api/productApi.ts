@@ -1,6 +1,17 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://plaza.verveautomation.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+interface UploadResponse {
+    status: number;
+    imageUrl: string;
+}
+
+interface ErrorResponse {
+    error: string;
+    message: string;
+    status: number;
+}
 
 // Interfaces
 export interface AddProduct {
@@ -128,4 +139,43 @@ export const activateDiscount = async (data: ActivateDiscountPayload) => {
     console.error('Error activating discount:', error);
     throw error;
   }
+};
+
+
+export const uploadFiles = async (
+    files: File[],
+): Promise<UploadResponse | ErrorResponse> => {
+    try {
+        const file = files[0];
+
+        if (!file) {
+            return {
+                error: "no_file",
+                message: "No file provided",
+                status: 400,
+            };
+        }
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        const response = await axios.post<UploadResponse>(
+            `${API_BASE_URL}/api/auth/img`,
+            formData,
+            {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            }
+        );
+
+        return response.data;
+    } catch (error) {
+        console.error("Error uploading file", error);
+        return {
+            error: "upload_failed",
+            message: "Failed to upload file",
+            status: 500,
+        };
+    }
 };

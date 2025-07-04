@@ -9,7 +9,7 @@ import { ChevronDownIcon } from '../../../../icons';
 import TextArea from '../../input/TextArea';
 import FileInput from '../../input/FileInput';
 import Button from '@/components/ui/button/Button';
-import { addProduct } from '@/lib/api/productApi';
+import { addProduct, uploadFiles } from '@/lib/api/productApi';
 import { DropdownContext } from '@/context/DropdownContext';
 import { toast } from 'react-hot-toast';
 
@@ -45,6 +45,7 @@ export default function DefaultInputs({
   const [subCategoryCode, setSubCategoryCode] = useState("");
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [image, setimage] = useState<File | null>(null);
 
   const { shopOptions, mainCategoryOptions, subCategoryOptions } = useContext(DropdownContext);
 
@@ -76,19 +77,41 @@ export default function DefaultInputs({
     }
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event?.target.files && event.target.files) {
+            setimage(event.target.files[0])
+        }
+    };
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    const payload = {
-      shop_id: shopId,
-      product_name: productName.trim(),
-      mCategory_code: mainCategoryCode,
-      sCategory_code: subCategoryCode,
-      product_description: description.trim(),
-      image_url: imageUrl,
-    };
+    let uploadedImg = "";
 
     try {
+
+      if (image) {
+        const uploadResponse = await uploadFiles([image]) as { status: number; imageUrl: string };
+        console.log(uploadResponse, "uploadResponse");
+
+        if (uploadResponse.imageUrl && uploadResponse.status === 200) {
+          uploadedImg = uploadResponse.imageUrl;
+          setImageUrl(uploadedImg); // ✅ Correct: update your image URL state
+          console.log("Image uploaded toXXX:", uploadedImg);
+        } else {
+          console.error("Image URL not found in upload response.");
+        }
+      }
+      console.log("Image uploaded TEST:", imageUrl);
+        const payload = {
+          shop_id: shopId,
+          product_name: productName.trim(),
+          mCategory_code: mainCategoryCode,
+          sCategory_code: subCategoryCode,
+          product_description: description.trim(),
+          image_url: uploadedImg,
+        };
+
       const result = await addProduct(payload);
       console.log("API response:", result);
       toast.success("Product added successfully!");
@@ -238,11 +261,7 @@ export default function DefaultInputs({
         <div>
           <Label>Upload file</Label>
           <FileInput
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              setImageUrl(file ? file.name : "");
-              clearFieldError('imageUrl');
-            }}
+            onChange={handleImageUpload}
             className={errors.imageUrl ? 'border-red-500' : ''}
           />
           {errors.imageUrl && <p className="mt-1 text-sm text-red-500">{errors.imageUrl}</p>}
