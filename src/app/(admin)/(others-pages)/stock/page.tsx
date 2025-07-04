@@ -1,27 +1,87 @@
+"use client";
+
+export const dynamic = "force-dynamic";
+
+import React, { useEffect, useState, Suspense } from "react";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import { Metadata } from "next";
-import React from "react";
+import BasicTableOne from "@/components/tables/StockTable";
+import { getAllProducts } from "@/lib/api/productApi";
+import { useSearchParams } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Next.js Blank Page | TailAdmin - Next.js Dashboard Template",
-  description: "This is Next.js Blank Page TailAdmin Dashboard Template",
-};
+interface Product {
+  product_code: string;
+  productVarient_code: string;
+  product_name: string;
+  size: string;
+  barcode: string;
+  shop_id: string;
+  mCategory_code: string;
+  sCategory_code: string;
+  product_description: string;
+  image_url: string;
+  selling_price: number;
+  total_quantity: number;
+  quantity_type: string | null;
+  discount_percentage: number;
+  is_discount_active: boolean;
+  discountSellingPrice: number;
+}
 
-export default function BlankPage() {
+function StockPageContent() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+  const prefillVariantCode = searchParams.get("productVarient_code");
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await getAllProducts();
+        setProducts(response.formattedProducts || []);
+      } catch (error) {
+        console.error("Failed to fetch products", error);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  const filteredProducts = products.filter(
+    (p) =>
+      p.product_name.toLowerCase().includes(search.toLowerCase()) ||
+      p.product_code.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div>
-      <PageBreadcrumb pageTitle="Blank Page" />
+    <>
+      <PageBreadcrumb pageTitle="Product Stocks" />
       <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 dark:border-gray-800 dark:bg-white/[0.03] xl:px-10 xl:py-12">
-        <div className="mx-auto w-full max-w-[630px] text-center">
-          <h3 className="mb-4 font-semibold text-gray-800 text-theme-xl dark:text-white/90 sm:text-2xl">
-            Card Title Here
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 sm:text-base">
-            Start putting content on grids or panels, you can also use different
-            combinations of grids.Please check out the dashboard and other pages
-          </p>
+        <div className="mx-auto w-full max-w-[1000px]">
+          {/* Search Bar */}
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="Search by name or code..."
+              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          {/* Table */}
+          <BasicTableOne
+            filteredProducts={filteredProducts}
+            prefillVariantCode={prefillVariantCode}
+          />
         </div>
       </div>
-    </div>
+    </>
+  );
+}
+
+export default function StockPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-gray-500">Loading stock page...</div>}>
+      <StockPageContent />
+    </Suspense>
   );
 }
