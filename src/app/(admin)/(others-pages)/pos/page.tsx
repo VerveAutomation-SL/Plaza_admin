@@ -2,11 +2,11 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { Search, ShoppingCart, Plus, Minus, X, Eye } from "lucide-react";
-import { getAllProducts } from "@/lib/api/productApi";
+import { getAllProducts, getProductByBarcode } from "@/lib/api/productApi";
 import { placeOrder } from "@/lib/api/orderApi";
 import toast, { Toaster } from "react-hot-toast";
 import ViewProductModal from "@/components/ui/modal/ViewProductModal";
-
+import { getAllMainCategories, getAllSubCategories } from "@/lib/api/categoryApi";
 
 interface Product {
   product_code: string;
@@ -36,20 +36,32 @@ interface DecodedToken {
   [key: string]: string;
 }
 
+interface CategoryGroup {
+  main: string;
+  code: string;
+  subs: { name: string; code: string }[];
+}
+
 const PRODUCTS_PER_PAGE = 6;
 
 export default function POSPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchMode, setSearchMode] = useState<"name" | "barcode">("name");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
 
-  // Filters
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedMainCategory, setSelectedMainCategory] = useState<{ code: string; name: string }>({ code: "ALL", name: "Main Category" });
+  const [selectedSubCategory, setSelectedSubCategory] = useState<{ code: string; name: string }>({ code: "ALL", name: "Sub Category" });
+  const [mainDropdownOpen, setMainDropdownOpen] = useState(false);
+  const [subDropdownOpen, setSubDropdownOpen] = useState(false);
+
   const [onlyDiscounted, setOnlyDiscounted] = useState(false);
   const [onlyInStock, setOnlyInStock] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -67,20 +79,47 @@ export default function POSPage() {
     fetchProducts();
   }, []);
 
-  const categories = useMemo(() => {
-    const all = products.map(p => p.mCategory_code);
-    return ["All", ...Array.from(new Set(all))];
-  }, [products]);
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const [mainRes, subRes] = await Promise.all([
+          getAllMainCategories(),
+          getAllSubCategories(),
+        ]);
+
+        const mainList = mainRes.data || [];
+        const subList = subRes.data || [];
+
+        const structured = mainList.map((main: any) => ({
+          main: main.mCategory_name,
+          code: main.mCategory_code,
+          subs: subList
+            .filter((sub: any) => sub.MainCategory?.mCategory_code === main.mCategory_code)
+            .map((sub: any) => ({
+              name: sub.SCategory_name,
+              code: sub.SCategory_code,
+            })),
+        }));
+
+        setCategoryGroups(structured);
+      } catch (err) {
+        console.error("Failed to fetch categories", err);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const matchesSearch = product.product_name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = selectedCategory === "All" || product.mCategory_code === selectedCategory;
+      const matchesMain = selectedMainCategory.code === "ALL" || product.mCategory_code === selectedMainCategory.code;
+      const matchesSub = selectedSubCategory.code === "ALL" || product.sCategory_code === selectedSubCategory.code;
       const matchesDiscount = !onlyDiscounted || product.is_discount_active;
       const matchesStock = !onlyInStock || product.total_quantity > 0;
-      return matchesSearch && matchesCategory && matchesDiscount && matchesStock;
+      return matchesSearch && matchesMain && matchesSub && matchesDiscount && matchesStock;
     });
-  }, [searchTerm, selectedCategory, onlyDiscounted, onlyInStock, products]);
+  }, [searchTerm, selectedMainCategory, selectedSubCategory, onlyDiscounted, onlyInStock, products]);
 
   const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
   const paginatedProducts = useMemo(() => {
@@ -111,7 +150,6 @@ export default function POSPage() {
       toast.success("Added to cart");
     }
   };
-
 
   const updateQuantity = (variantCode: string, newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -144,8 +182,6 @@ export default function POSPage() {
   const discountAmount = (subtotal * discount) / 100;
   const total = subtotal - discountAmount;
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-
 
   const handleOrder = async () => {
     if (cart.length === 0) {
@@ -182,7 +218,6 @@ export default function POSPage() {
     }
   };
 
-
   return (
     <div className="min-h-screen bg-gray-50 text-black grid grid-cols-3 gap-6 p-6">
       <Toaster position="top-right" />
@@ -192,53 +227,130 @@ export default function POSPage() {
         <h2 className="text-2xl font-bold mb-4 text-gray-800">Available Products</h2>
 
         {/* Search */}
-        <div className="relative mb-4">
-          <input
-            type="text"
-            placeholder="Search products..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full border-2 border-gray-200 rounded-full py-3 px-4 pl-12 focus:outline-none focus:border-blue-500 transition-colors"
-          />
-          <Search className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap gap-4 items-center mb-6">
+        <div className="relative mb-4 flex gap-4 items-center">
           <select
-            value={selectedCategory}
+            value={searchMode}
             onChange={(e) => {
-              setSelectedCategory(e.target.value);
-              setCurrentPage(1);
+              setSearchMode(e.target.value as "name" | "barcode");
+              setSearchTerm("");
             }}
             className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none"
           >
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>{cat === "All" ? "All Categories" : cat}</option>
-            ))}
+            <option value="name">Search by Name</option>
+            <option value="barcode">Search by Barcode</option>
           </select>
 
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder={searchMode === "barcode" ? "Enter barcode..." : "Enter product name..."}
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full border-2 border-gray-200 rounded-full py-3 px-4 pl-12 focus:outline-none focus:border-blue-500 transition-colors"
+            />
+            <Search className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-4 items-center mb-6 relative z-20">
+          {/* MAIN CATEGORY BUTTON */}
+          <div className="relative">
+            <button
+              onClick={() => setMainDropdownOpen((prev) => !prev)}
+              className="px-4 py-2 border rounded bg-white shadow text-sm"
+            >
+              {selectedMainCategory.name} ▾
+            </button>
+            {mainDropdownOpen && (
+              <ul className="absolute mt-2 z-30 bg-white border rounded shadow w-44 max-h-55 overflow-y-auto">
+                <li
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => {
+                    setSelectedMainCategory({ code: "ALL", name: "Main Category" });
+                    setSelectedSubCategory({ code: "ALL", name: "Sub Category" });
+                    setMainDropdownOpen(false);
+                  }}
+                >
+                  All Categories
+                </li>
+                {categoryGroups.map((cat) => (
+                  <li
+                    key={cat.code}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => {
+                      setSelectedMainCategory({ code: cat.code, name: cat.main });
+                      setSelectedSubCategory({ code: "ALL", name: "Sub Category" });
+                      setMainDropdownOpen(false);
+                    }}
+                  >
+                    {cat.main}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* SUB CATEGORY BUTTON */}
+          {selectedMainCategory.code !== "ALL" && (
+            <div className="relative">
+              <button
+                onClick={() => setSubDropdownOpen((prev) => !prev)}
+                className="px-4 py-2 border rounded bg-white shadow text-sm"
+              >
+                {selectedSubCategory.name} ▾
+              </button>
+              {subDropdownOpen && (
+                <ul className="absolute mt-2 z-30 bg-white border rounded shadow w-44 max-h-60 overflow-y-auto">
+                  <li
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => {
+                      setSelectedSubCategory({ code: "ALL", name: "Sub Category" });
+                      setSubDropdownOpen(false);
+                    }}
+                  >
+                    All Subcategories
+                  </li>
+                  {categoryGroups
+                    .find((cat) => cat.code === selectedMainCategory.code)
+                    ?.subs.map((sub) => (
+                      <li
+                        key={sub.code}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                        onClick={() => {
+                          setSelectedSubCategory({ code: sub.code, name: sub.name });
+                          setSubDropdownOpen(false);
+                        }}
+                      >
+                        {sub.name}
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {/* Discount Button */}
           <button
             onClick={() => {
               setOnlyDiscounted((prev) => !prev);
               setCurrentPage(1);
             }}
-            className={`px-4 py-2 rounded-full text-sm font-medium border ${onlyDiscounted ? 'bg-green-100 text-green-700 border-green-300' : 'bg-gray-100 text-gray-700 border-gray-300'
-              }`}
+            className={`px-4 py-2 rounded-full text-sm font-medium border ${onlyDiscounted ? 'bg-green-100 text-green-700 border-green-300' : 'bg-gray-100 text-gray-700 border-gray-300'}`}
           >
             {onlyDiscounted ? "✓ Discounted" : "Show Discounts"}
           </button>
 
+          {/* Stock Button */}
           <button
             onClick={() => {
               setOnlyInStock((prev) => !prev);
               setCurrentPage(1);
             }}
-            className={`px-4 py-2 rounded-full text-sm font-medium border ${onlyInStock ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-gray-100 text-gray-700 border-gray-300'
-              }`}
+            className={`px-4 py-2 rounded-full text-sm font-medium border ${onlyInStock ? 'bg-blue-100 text-blue-700 border-blue-300' : 'bg-gray-100 text-gray-700 border-gray-300'}`}
           >
             {onlyInStock ? "✓ In Stock Only" : "Show In Stock"}
           </button>
@@ -257,75 +369,74 @@ export default function POSPage() {
           </div>
         ) : (
           <>
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {paginatedProducts.map((product) => {
-        const cartItem = cart.find(item => item.productVarient_code === product.productVarient_code);
-        const isOutOfStock = product.total_quantity === 0;
-        const isMaxQuantity = cartItem && cartItem.quantity >= product.total_quantity;
-        const displayPrice = product.is_discount_active ? product.discountSellingPrice : product.selling_price;
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginatedProducts.map((product) => {
+                const cartItem = cart.find(item => item.productVarient_code === product.productVarient_code);
+                const isOutOfStock = product.total_quantity === 0;
+                const isMaxQuantity = cartItem && cartItem.quantity >= product.total_quantity;
+                const displayPrice = product.is_discount_active ? product.discountSellingPrice : product.selling_price;
 
-        return (
-          <div
-            key={product.productVarient_code}
-            className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow text-sm flex flex-col h-full"
-          >
-            <img
-              src={product.image_url || "/placeholder.png"}
-              alt={product.product_name}
-              className="h-32 w-full object-contain mb-2 rounded"
-            />
+                return (
+                  <div
+                    key={product.productVarient_code}
+                    className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow text-sm flex flex-col h-full"
+                  >
+                    <img
+                      src={product.image_url || "/placeholder.png"}
+                      alt={product.product_name}
+                      className="h-32 w-full object-contain mb-2 rounded"
+                    />
 
-            <h3 className="font-semibold text-gray-800 text-base">{product.product_name}</h3>
-            <p className="text-gray-500 mb-1">
-              Stock:{" "}
-              <span className={product.total_quantity > 0 ? "text-green-600" : "text-red-500"}>
-                {product.total_quantity > 0 ? `${product.total_quantity} available` : "Out of stock"}
-              </span>
-            </p>
+                    <h3 className="font-semibold text-gray-800 text-base">{product.product_name}</h3>
+                    <p className="text-gray-500 mb-1">
+                      Stock:{" "}
+                      <span className={product.total_quantity > 0 ? "text-green-600" : "text-red-500"}>
+                        {product.total_quantity > 0 ? `${product.total_quantity} available` : "Out of stock"}
+                      </span>
+                    </p>
 
-            <p className="text-gray-800 font-bold mb-2">
-              LKR {displayPrice.toFixed(2)}{" "}
-              {product.is_discount_active && (
-                <span className="text-gray-400 line-through ml-2 text-sm">
-                  LKR {product.selling_price.toFixed(2)}
-                </span>
-              )}
-            </p>
+                    <p className="text-gray-800 font-bold mb-2">
+                      LKR {displayPrice.toFixed(2)}{" "}
+                      {product.is_discount_active && (
+                        <span className="text-gray-400 line-through ml-2 text-sm">
+                          LKR {product.selling_price.toFixed(2)}
+                        </span>
+                      )}
+                    </p>
 
-            <div className="mt-auto flex justify-between gap-2">
-              <button
-                onClick={() => setSelectedProduct(product)} // ✅ Trigger modal here
-                className="flex items-center justify-center w-10 h-10 rounded bg-gray-100 hover:bg-gray-200 text-gray-700"
-              >
-                <Eye className="h-5 w-5" />
-              </button>
+                    <div className="mt-auto flex justify-between gap-2">
+                      <button
+                        onClick={() => setSelectedProduct(product)} // ✅ Trigger modal here
+                        className="flex items-center justify-center w-10 h-10 rounded bg-gray-100 hover:bg-gray-200 text-gray-700"
+                      >
+                        <Eye className="h-5 w-5" />
+                      </button>
 
-              <button
-                onClick={() => addToCart(product)}
-                disabled={isOutOfStock || isMaxQuantity}
-                className={`flex-1 py-2 px-4 rounded text-sm font-medium transition-colors ${
-                  isOutOfStock || isMaxQuantity
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-blue-500 hover:bg-blue-600 text-white"
-                }`}
-              >
-                {isOutOfStock ? "Out of Stock" : isMaxQuantity ? "Max Qty" : "Add to Cart"}
-              </button>
+                      <button
+                        onClick={() => addToCart(product)}
+                        disabled={isOutOfStock || isMaxQuantity}
+                        className={`flex-1 py-2 px-4 rounded text-sm font-medium transition-colors ${isOutOfStock || isMaxQuantity
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-blue-500 hover:bg-blue-600 text-white"
+                          }`}
+                      >
+                        {isOutOfStock ? "Out of Stock" : isMaxQuantity ? "Max Qty" : "Add to Cart"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
-        );
-      })}
-    </div>
 
-    {selectedProduct && (
-  <ViewProductModal
-    isOpen={true}
-    onClose={() => setSelectedProduct(null)}
-    variants={[selectedProduct]} // 👈 wrap it in array
-  />
-)}
-  </>
-)}
+            {selectedProduct && (
+              <ViewProductModal
+                isOpen={true}
+                onClose={() => setSelectedProduct(null)}
+                variants={[selectedProduct]}
+              />
+            )}
+          </>
+        )}
 
         {/* Pagination */}
         {!isLoading && paginatedProducts.length > 0 && (
@@ -345,7 +456,7 @@ export default function POSPage() {
               disabled={currentPage === totalPages}
               className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-sm disabled:opacity-50"
             >
-              Next
+              Next item
             </button>
           </div>
         )}
@@ -459,3 +570,5 @@ export default function POSPage() {
     </div>
   );
 }
+
+
