@@ -1,9 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  images: {
-    domains: ["plazaone.s3.ap-southeast-1.amazonaws.com"], 
-  },
+  /* config options here */
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,

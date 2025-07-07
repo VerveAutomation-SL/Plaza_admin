@@ -1,6 +1,18 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://plaza.verveautomation.com';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+interface UploadResponse {
+    status: number;
+    imageUrl: string;
+}
+
+interface ErrorResponse {
+    error: string;
+    message: string;
+    status: number;
+}
 
 // Interfaces
 export interface AddProduct {
@@ -19,6 +31,7 @@ export interface AddProductVariant {
   size: string;
   selling_price: number;
   discount_percentage: number;
+  image_url:string;
   is_discount_active: boolean;
   attributes: { name: string; value: string }[];
 }
@@ -48,6 +61,27 @@ export interface ActivateDiscountPayload {
   productVariant_code: string;
   is_discount_active: boolean;
 }
+
+
+export interface Product {
+  product_code: string;
+  productVarient_code: string;
+  product_name: string;
+  size: string;
+  barcode: string;
+  selling_price: number;
+  discount_percentage: number;
+  is_discount_active: boolean;
+  discountSellingPrice: number;
+  total_quantity: number;
+  mCategory_code: string;
+  sCategory_code: string;
+  product_description: string;
+  shop_id: string;
+  image_url: string;
+  quantity_type?: string | null;
+}
+
 
 // API functions
 export const addProduct = async (data: AddProduct) => {
@@ -129,3 +163,47 @@ export const activateDiscount = async (data: ActivateDiscountPayload) => {
     throw error;
   }
 };
+
+
+export const uploadFiles = async (
+    files: File[],
+): Promise<UploadResponse | ErrorResponse> => {
+    try {
+        const file = files[0];
+
+        if (!file) {
+            return {
+                error: "no_file",
+                message: "No file provided",
+                status: 400,
+            };
+        }
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        const response = await axios.post<UploadResponse>(
+            `${API_BASE_URL}/api/auth/img`,
+            formData,
+            {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            }
+        );
+
+        return response.data;
+    } catch (error) {
+        console.error("Error uploading file", error);
+        return {
+            error: "upload_failed",
+            message: "Failed to upload file",
+            status: 500,
+        };
+    }
+};
+
+export async function searchProducts(query: string): Promise<Product[]> {
+  const res = await axios.get(`${API_BASE_URL}/api/products/search?q=${encodeURIComponent(query)}`);
+  return res.data;
+}

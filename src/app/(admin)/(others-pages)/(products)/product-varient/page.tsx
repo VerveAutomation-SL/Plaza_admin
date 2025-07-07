@@ -27,6 +27,7 @@ export default function AddProductVariantPage() {
                 discountLabel="Discount Percentage"
                 discountToggleLabel="Is Discount Active"
                 attributeLabel="Attributes"
+                image_url="image_url"
               />
             </div>
           </div>
