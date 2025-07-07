@@ -12,7 +12,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { getProductByBarcode } from "@/lib/api/productApi";
 import { Eye, Pencil, Trash2 } from "lucide-react";
-import UpdateProductModal from "../ui/modal/UpdateProductVarient"; // ✅ Corrected import (default import)
+import UpdateProductModal from "../ui/modal/UpdateProductVarient";
 import ViewProductVariantModal from "../ui/modal/ViewProductVariantModal";
 import { toast } from "react-hot-toast";
 
@@ -37,7 +37,7 @@ interface ProductVariant {
 
 export default function BasicTableOne() {
   const [barcode, setBarcode] = useState("");
-  const [product, setProduct] = useState<ProductVariant | null>(null);
+  const [product, setProduct] = useState<ProductVariant | null | "not-found">(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const router = useRouter();
@@ -48,11 +48,17 @@ export default function BasicTableOne() {
       if (res?.product) {
         setProduct(res.product);
       } else {
-        setProduct(null);
-        console.warn("No product found for barcode", barcode);
+        setProduct("not-found");
+        toast.error("No product found for the entered barcode.");
       }
-    } catch (error) {
-      console.error("Failed to fetch product by barcode:", error);
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        setProduct("not-found");
+        toast.error("No product found for the entered barcode.");
+      } else {
+        console.error("Error fetching product:", error);
+        toast.error("Something went wrong. Try again.");
+      }
     }
   };
 
@@ -80,7 +86,7 @@ export default function BasicTableOne() {
             <button
               onClick={() => {
                 toast.dismiss(t.id);
-                toast.success(`Deleted ${variant.product_name} (not really, just mocked)`, {
+                toast.success(`Deleted ${variant.product_name} (mocked)`, {
                   style: { top: "5rem" },
                   position: "top-center",
                 });
@@ -139,7 +145,7 @@ export default function BasicTableOne() {
             </TableHeader>
 
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {product && (
+              {product && product !== "not-found" && (
                 <>
                   <TableRow key={product.productVarient_code}>
                     <TableCell className="px-3 py-3 text-start">
@@ -200,12 +206,20 @@ export default function BasicTableOne() {
                   </TableRow>
                 </>
               )}
+
+              {product === "not-found" && (
+                <tr>
+                  <td colSpan={5} className="text-center py-6 text-gray-500">
+                    No product found for the entered barcode.
+                  </td>
+                </tr>
+              )}
             </TableBody>
           </Table>
         </div>
       </div>
 
-      {product && (
+      {product && product !== "not-found" && (
         <UpdateProductModal
           isOpen={isUpdateModalOpen}
           onClose={() => setIsUpdateModalOpen(false)}
@@ -213,7 +227,13 @@ export default function BasicTableOne() {
         />
       )}
 
-      <ViewProductVariantModal isOpen={isViewModalOpen} onClose={() => setIsViewModalOpen(false)} barcode={barcode} />
+      {product && product !== "not-found" && (
+        <ViewProductVariantModal
+          isOpen={isViewModalOpen}
+          onClose={() => setIsViewModalOpen(false)}
+          barcode={barcode}
+        />
+      )}
     </div>
   );
 }
