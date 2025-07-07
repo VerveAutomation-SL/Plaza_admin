@@ -456,7 +456,7 @@ export default function POSPage() {
               disabled={currentPage === totalPages}
               className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-sm disabled:opacity-50"
             >
-              Next item
+              Next
             </button>
           </div>
         )}
