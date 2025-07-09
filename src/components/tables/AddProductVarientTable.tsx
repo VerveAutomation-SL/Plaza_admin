@@ -51,6 +51,7 @@ export default function BasicTableOne() {
         setProduct("not-found");
         toast.error("No product found for the entered barcode.");
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error?.response?.status === 404) {
         setProduct("not-found");

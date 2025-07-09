@@ -2,11 +2,13 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { Search, ShoppingCart, Plus, Minus, X, Eye } from "lucide-react";
-import { getAllProducts, getProductByBarcode } from "@/lib/api/productApi";
+import { getAllProducts } from "@/lib/api/productApi";
 import { placeOrder } from "@/lib/api/orderApi";
 import toast, { Toaster } from "react-hot-toast";
 import ViewProductModal from "@/components/ui/modal/ViewProductModal";
 import { getAllMainCategories, getAllSubCategories } from "@/lib/api/categoryApi";
+import Image from "next/image";
+
 
 interface Product {
   product_code: string;
@@ -90,11 +92,14 @@ export default function POSPage() {
         const mainList = mainRes.data || [];
         const subList = subRes.data || [];
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const structured = mainList.map((main: any) => ({
           main: main.mCategory_name,
           code: main.mCategory_code,
           subs: subList
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .filter((sub: any) => sub.MainCategory?.mCategory_code === main.mCategory_code)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .map((sub: any) => ({
               name: sub.SCategory_name,
               code: sub.SCategory_code,
@@ -381,10 +386,13 @@ export default function POSPage() {
                     key={product.productVarient_code}
                     className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow text-sm flex flex-col h-full"
                   >
-                    <img
+                    <Image
                       src={product.image_url || "/placeholder.png"}
                       alt={product.product_name}
-                      className="h-32 w-full object-contain mb-2 rounded"
+                      width={200}
+                      height={128}
+                      className="w-full h-32 object-contain mb-2 rounded"
+                      style={{ objectFit: "contain" }}
                     />
 
                     <h3 className="font-semibold text-gray-800 text-base">{product.product_name}</h3>

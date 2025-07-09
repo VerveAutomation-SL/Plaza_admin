@@ -41,14 +41,12 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
   const [productCode, setProductCode] = useState("");
   const [mainCategoryCode, setMainCategoryCode] = useState("");
   const [subCategoryCode, setSubCategoryCode] = useState("");
-  const [shopId, setShopId] = useState("");
   const [size, setSize] = useState("");
   const [sellingPrice, setSellingPrice] = useState("");
   const [barcode, setBarcode] = useState("");
   const [discountPercentage, setDiscountPercentage] = useState("");
   const [isDiscountActive, setIsDiscountActive] = useState(false);
   const [attributes, setAttributes] = useState<Attribute[]>([{ name: "", value: "" }]);
-  const [errors, setErrors] = useState<ValidationErrors>({});
   const [image, setImage] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -56,7 +54,6 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
     productOptions,
     mainCategoryOptions,
     subCategoryOptions,
-    shopOptions,
   } = useContext(DropdownContext);
 
   const validateForm = (): boolean => {
@@ -107,7 +104,6 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
         is_discount_active: isDiscountActive,
         attributes: attributes.filter(a => a.name && a.value),
         image_url: uploadedUrl,
-        shop_id: shopId,
         mCategory_code: mainCategoryCode,
         sCategory_code: subCategoryCode,
       };
@@ -240,3 +236,8 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
     </div>
   );
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function setErrors(newErrors: ValidationErrors) {
+  throw new Error("Function not implemented.");
+}
+

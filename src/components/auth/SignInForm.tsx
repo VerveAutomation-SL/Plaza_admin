@@ -1,5 +1,5 @@
 "use client";
-import Checkbox from "@/components/form/input/Checkbox";
+// import Checkbox from "@/components/form/input/Checkbox";
 import Input from "@/components/form/input/InputField";
 import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
@@ -13,7 +13,7 @@ import axios from "axios";
 export default function SignInForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
+  // const [isChecked, setIsChecked] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -68,7 +68,7 @@ export default function SignInForm() {
             Sign In
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Enter your email and password to sign in!
+            Enter your email and password to sign in
           </p>
 
           <form onSubmit={handleLogin} className="mt-5 space-y-6">
@@ -112,7 +112,7 @@ export default function SignInForm() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
+            {/* <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Checkbox checked={isChecked} onChange={setIsChecked} />
                 <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">
@@ -125,7 +125,7 @@ export default function SignInForm() {
               >
                 Forgot password?
               </Link>
-            </div>
+            </div> */}
 
             <div>
               <Button type="submit" className="w-full" size="sm" disabled={loading}>
@@ -134,7 +134,7 @@ export default function SignInForm() {
             </div>
           </form>
 
-          <div className="mt-5">
+          {/* <div className="mt-5">
             <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
               Don&apos;t have an account?{" "}
               <Link
@@ -144,7 +144,7 @@ export default function SignInForm() {
                 Sign Up
               </Link>
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
