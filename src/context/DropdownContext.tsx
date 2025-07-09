@@ -21,10 +21,16 @@ interface SubCategoryResponse {
   SCategory_name: string;
 }
 
+interface ProductResponse {
+  product_code: string;
+  product_name: string;
+}
+
 interface DropdownContextType {
   shopOptions: Option[];
   mainCategoryOptions: Option[];
   subCategoryOptions: Option[];
+  productOptions: Option[];
   loading: boolean;
 }
 
@@ -32,6 +38,7 @@ export const DropdownContext = createContext<DropdownContextType>({
   shopOptions: [],
   mainCategoryOptions: [],
   subCategoryOptions: [],
+  productOptions: [],
   loading: true,
 });
 
@@ -39,6 +46,7 @@ export const DropdownProvider = ({ children }: { children: React.ReactNode }) =>
   const [shopOptions, setShopOptions] = useState<Option[]>([]);
   const [mainCategoryOptions, setMainCategoryOptions] = useState<Option[]>([]);
   const [subCategoryOptions, setSubCategoryOptions] = useState<Option[]>([]);
+  const [productOptions, setProductOptions] = useState<Option[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,9 +74,17 @@ export const DropdownProvider = ({ children }: { children: React.ReactNode }) =>
           label: sub.SCategory_name,
         }));
 
+        const productRes = await fetch("https://plaza.verveautomation.com/api/auth/GetProductsOnly");
+        const products: ProductResponse[] = await productRes.json();
+        const productMapped = products.map((prod) => ({
+          value: prod.product_code,
+          label: prod.product_name,
+        }));
+
         setShopOptions(shopMapped);
         setMainCategoryOptions(mainMapped);
         setSubCategoryOptions(subMapped);
+        setProductOptions(productMapped);
       } catch (err) {
         console.error("Error fetching dropdown data", err);
       } finally {
@@ -81,7 +97,7 @@ export const DropdownProvider = ({ children }: { children: React.ReactNode }) =>
 
   return (
     <DropdownContext.Provider
-      value={{ shopOptions, mainCategoryOptions, subCategoryOptions, loading }}
+      value={{ shopOptions, mainCategoryOptions, subCategoryOptions, productOptions, loading }}
     >
       {children}
     </DropdownContext.Provider>

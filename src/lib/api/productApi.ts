@@ -1,17 +1,16 @@
-import axios from 'axios';
-
+import axios from "axios";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface UploadResponse {
-    status: number;
-    imageUrl: string;
+  status: number;
+  imageUrl: string;
 }
 
 interface ErrorResponse {
-    error: string;
-    message: string;
-    status: number;
+  error: string;
+  message: string;
+  status: number;
 }
 
 // Interfaces
@@ -31,7 +30,7 @@ export interface AddProductVariant {
   size: string;
   selling_price: number;
   discount_percentage: number;
-  image_url:string;
+  image_url: string;
   is_discount_active: boolean;
   attributes: { name: string; value: string }[];
 }
@@ -39,7 +38,7 @@ export interface AddProductVariant {
 export interface StockBatch {
   variant_id: string;
   quantity: number;
-  quantity_type: string; 
+  quantity_type: string;
   base_price: number;
   received_at?: string;
 }
@@ -62,7 +61,6 @@ export interface ActivateDiscountPayload {
   is_discount_active: boolean;
 }
 
-
 export interface Product {
   product_code: string;
   productVarient_code: string;
@@ -82,14 +80,20 @@ export interface Product {
   quantity_type?: string | null;
 }
 
+// ✅ NEW INTERFACE for GetProductsOnly
+export interface BasicProduct {
+  product_code: string;
+  product_name: string;
+}
 
-// API functions
+// ===================== API FUNCTIONS =====================
+
 export const addProduct = async (data: AddProduct) => {
   try {
     const res = await axios.post(`${API_BASE_URL}/api/auth/AddProducts`, data);
     return res.data;
   } catch (error) {
-    console.error('Error adding product:', error);
+    console.error("Error adding product:", error);
     throw error;
   }
 };
@@ -99,7 +103,7 @@ export const addProductVariant = async (data: AddProductVariant) => {
     const res = await axios.post(`${API_BASE_URL}/api/auth/AddProductsVariants`, data);
     return res.data;
   } catch (error) {
-    console.error('Error adding product variant:', error);
+    console.error("Error adding product variant:", error);
     throw error;
   }
 };
@@ -109,7 +113,17 @@ export const getAllProducts = async () => {
     const res = await axios.get(`${API_BASE_URL}/api/auth/GetAllProducts`);
     return res.data;
   } catch (error) {
-    console.error('Error fetching all products:', error);
+    console.error("Error fetching all products:", error);
+    throw error;
+  }
+};
+
+export const getProductsOnly = async (): Promise<BasicProduct[]> => {
+  try {
+    const res = await axios.get(`${API_BASE_URL}/api/auth/GetProductsOnly`);
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching basic product list:", error);
     throw error;
   }
 };
@@ -119,7 +133,7 @@ export const addStockBatch = async (batchData: StockBatch) => {
     const res = await axios.post(`${API_BASE_URL}/api/auth/AddStockBatches`, batchData);
     return res.data;
   } catch (error) {
-    console.error('Error adding stock batch:', error);
+    console.error("Error adding stock batch:", error);
     throw error;
   }
 };
@@ -129,7 +143,7 @@ export const updateProductVariant = async (variantData: ProductVariantUpdate) =>
     const res = await axios.put(`${API_BASE_URL}/api/auth/UpdateProductVarient`, variantData);
     return res.data;
   } catch (error) {
-    console.error('Error updating product variant:', error);
+    console.error("Error updating product variant:", error);
     throw error;
   }
 };
@@ -139,7 +153,7 @@ export const addDiscount = async (discountData: DiscountPayload) => {
     const res = await axios.post(`${API_BASE_URL}/api/auth/AddDiscount`, discountData);
     return res.data;
   } catch (error) {
-    console.error('Error adding discount:', error);
+    console.error("Error adding discount:", error);
     throw error;
   }
 };
@@ -159,48 +173,45 @@ export const activateDiscount = async (data: ActivateDiscountPayload) => {
     const res = await axios.post(`${API_BASE_URL}/api/auth/ActivateDiscount`, data);
     return res.data;
   } catch (error) {
-    console.error('Error activating discount:', error);
+    console.error("Error activating discount:", error);
     throw error;
   }
 };
 
+export const uploadFiles = async (files: File[]): Promise<UploadResponse | ErrorResponse> => {
+  try {
+    const file = files[0];
 
-export const uploadFiles = async (
-    files: File[],
-): Promise<UploadResponse | ErrorResponse> => {
-    try {
-        const file = files[0];
-
-        if (!file) {
-            return {
-                error: "no_file",
-                message: "No file provided",
-                status: 400,
-            };
-        }
-
-        const formData = new FormData();
-        formData.append("image", file);
-
-        const response = await axios.post<UploadResponse>(
-            `${API_BASE_URL}/api/auth/img`,
-            formData,
-            {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            }
-        );
-
-        return response.data;
-    } catch (error) {
-        console.error("Error uploading file", error);
-        return {
-            error: "upload_failed",
-            message: "Failed to upload file",
-            status: 500,
-        };
+    if (!file) {
+      return {
+        error: "no_file",
+        message: "No file provided",
+        status: 400,
+      };
     }
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await axios.post<UploadResponse>(
+      `${API_BASE_URL}/api/auth/img`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error uploading file", error);
+    return {
+      error: "upload_failed",
+      message: "Failed to upload file",
+      status: 500,
+    };
+  }
 };
 
 export async function searchProducts(query: string): Promise<Product[]> {

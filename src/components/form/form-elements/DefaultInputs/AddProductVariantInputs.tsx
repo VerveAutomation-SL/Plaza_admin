@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { addProductVariant, getAllProducts } from "@/lib/api/productApi";
-import { AddProductVariant , uploadFiles} from "@/lib/api/productApi";
+import React, { useState, useContext } from "react";
+import { addProductVariant, uploadFiles } from "@/lib/api/productApi";
 import { toast } from "react-hot-toast";
 import Label from '../../Label';
 import FileInput from '../../input/FileInput';
+import Select from '../../Select';
+import { DropdownContext } from "@/context/DropdownContext";
+import { ChevronDownIcon } from "@/icons";
 
 interface Attribute {
   name: string;
@@ -19,8 +21,6 @@ interface ValidationErrors {
   sellingPrice?: string;
   barcode?: string;
   discountPercentage?: string;
-  attributes?: string[];
-  imageUrl?: string;
 }
 
 interface DefaultInputsProps {
@@ -33,12 +33,15 @@ interface DefaultInputsProps {
   discountLabel: string;
   discountToggleLabel: string;
   attributeLabel: string;
-  image_url:string;
+  image_url: string;
 }
 
 export default function AddProductVariantPage(props: DefaultInputsProps) {
   const [variantName, setVariantName] = useState("");
   const [productCode, setProductCode] = useState("");
+  const [mainCategoryCode, setMainCategoryCode] = useState("");
+  const [subCategoryCode, setSubCategoryCode] = useState("");
+  const [shopId, setShopId] = useState("");
   const [size, setSize] = useState("");
   const [sellingPrice, setSellingPrice] = useState("");
   const [barcode, setBarcode] = useState("");
@@ -46,43 +49,15 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
   const [isDiscountActive, setIsDiscountActive] = useState(false);
   const [attributes, setAttributes] = useState<Attribute[]>([{ name: "", value: "" }]);
   const [errors, setErrors] = useState<ValidationErrors>({});
+  const [image, setImage] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [products, setProducts] = useState<{ product_name: string; product_code: string; barcode: string }[]>([]);
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const [image, setimage] = useState<File | null>(null);
-
-  useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const response = await getAllProducts();
-        if (Array.isArray(response.formattedProducts)) {
-          setProducts(response.formattedProducts);
-        } else {
-          console.error("getAllProducts() did not return an array:", response);
-          setProducts([]);
-        }
-      } catch (err) {
-        console.error("Failed to fetch products", err);
-        setProducts([]);
-      }
-    }
-
-    fetchProducts();
-  }, []);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const {
+    productOptions,
+    mainCategoryOptions,
+    subCategoryOptions,
+    shopOptions,
+  } = useContext(DropdownContext);
 
   const validateForm = (): boolean => {
     const newErrors: ValidationErrors = {};
@@ -90,7 +65,6 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
     if (!productCode.trim()) newErrors.productCode = "Product code is required";
     if (!size.trim()) newErrors.size = "Size is required";
     if (!sellingPrice.trim()) newErrors.sellingPrice = "Selling price is required";
-    else if (isNaN(Number(sellingPrice)) || Number(sellingPrice) <= 0) newErrors.sellingPrice = "Invalid price";
     if (!barcode.trim()) newErrors.barcode = "Barcode is required";
     if (isDiscountActive && !discountPercentage.trim()) newErrors.discountPercentage = "Discount is required";
     setErrors(newErrors);
@@ -98,127 +72,64 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
   };
 
   const handleAttributeChange = (index: number, field: keyof Attribute, value: string) => {
-    const newAttrs = [...attributes];
-    newAttrs[index][field] = value;
-    setAttributes(newAttrs);
+    const updated = [...attributes];
+    updated[index][field] = value;
+    setAttributes(updated);
   };
 
-  const addAttributeField = () => {
-    setAttributes([...attributes, { name: "", value: "" }]);
-  };
+  const addAttributeField = () => setAttributes([...attributes, { name: "", value: "" }]);
+  const removeAttributeField = (index: number) => setAttributes(attributes.filter((_, i) => i !== index));
 
-  const removeAttributeField = (index: number) => {
-    const newAttrs = attributes.filter((_, i) => i !== index);
-    setAttributes(newAttrs);
-  };
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-          if (event?.target.files && event.target.files) {
-              setimage(event.target.files[0])
-          }
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      setImage(e.target.files[0]);
+    }
   };
 
   const handleSubmit = async () => {
-  if (!validateForm()) return;
-  setIsSubmitting(true);
-
-  let uploadedImg = "";
-
-  try {
-    // Upload image if selected
-    if (image) {
-      const uploadResponse = await uploadFiles([image]) as { status: number; imageUrl: string };
-      console.log(uploadResponse, "uploadResponse");
-
-      if (uploadResponse.imageUrl && uploadResponse.status === 200) {
-        uploadedImg = uploadResponse.imageUrl;
-        console.log("Image uploaded to:", uploadedImg);
-      } else {
-        console.error("Image URL not found in upload response.");
-      }
-    }
-
-    const validAttributes = attributes.filter(attr => attr.name && attr.value);
-
-    const payload: AddProductVariant = {
-      product_code: productCode,
-      productVariant_name: variantName,
-      size,
-      selling_price: parseFloat(sellingPrice),
-      barcode,
-      discount_percentage: parseFloat(discountPercentage) || 0,
-      is_discount_active: isDiscountActive,
-      attributes: validAttributes,
-      image_url: uploadedImg, // ✅ Add image URL to payload if required
-    };
-
-    await addProductVariant(payload);
-    toast.success("Product variant added successfully!", {
-      style: { top: "5rem" },
-      position: "top-center"
-    });
-
-    // Reset form fields
-    setVariantName("");
-    setProductCode("");
-    setSize("");
-    setSellingPrice("");
-    setBarcode("");
-    setDiscountPercentage("");
-    setIsDiscountActive(false);
-    setAttributes([{ name: "", value: "" }]);
-    setErrors({});
-  } catch (err) {
-    toast.error("Error submitting the form. Try again.", {
-      style: { top: "5rem" },
-      position: "top-center"
-    });
-    console.error(err);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
-
-  const handleConfirm = () => {
     if (!validateForm()) return;
+    setIsSubmitting(true);
+    let uploadedUrl = "";
 
-    toast.custom((t) => (
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-lg mt-80">
-        <div className="bg-white dark:bg-gray-800 px-8 py-6 rounded-xl shadow-xl border border-gray-300 max-w-md w-full z-[99999]">
-          <p className="text-gray-800 dark:text-white mb-6 text-center text-lg font-semibold">
-            Are you sure you want to add this product variant?
-          </p>
-          <div className="flex justify-center gap-4">
-            <button
-              onClick={() => {
-                toast.dismiss(t.id);
-                handleSubmit();
-              }}
-              className="px-5 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-            >
-              OK
-            </button>
-            <button
-              onClick={() => {
-                toast.dismiss(t.id);
-                toast.error("Product variant addition cancelled.", {
-                  style: { top: "5rem" },
-                  position: "top-center"
-                });
-              }}
-              className="px-5 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    ));
+    try {
+      if (image) {
+        const result = await uploadFiles([image]) as { status: number; imageUrl: string };
+        if (result.status === 200) uploadedUrl = result.imageUrl;
+      }
+
+      const payload = {
+        product_code: productCode,
+        productVariant_name: variantName,
+        size,
+        selling_price: parseFloat(sellingPrice),
+        barcode,
+        discount_percentage: parseFloat(discountPercentage) || 0,
+        is_discount_active: isDiscountActive,
+        attributes: attributes.filter(a => a.name && a.value),
+        image_url: uploadedUrl,
+        shop_id: shopId,
+        mCategory_code: mainCategoryCode,
+        sCategory_code: subCategoryCode,
+      };
+
+      await addProductVariant(payload);
+      toast.success("Product variant added!");
+      setVariantName("");
+      setProductCode("");
+      setMainCategoryCode("");
+      setSubCategoryCode("");
+      setSize("");
+      setSellingPrice("");
+      setBarcode("");
+      setDiscountPercentage("");
+      setIsDiscountActive(false);
+      setAttributes([{ name: "", value: "" }]);
+    } catch {
+      toast.error("Failed to add product variant.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
-  const filteredProducts = Array.from(new Map(products.map(p => [p.product_code, p])).values())
-    .filter(p => p.product_name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <div className="p-6 bg-white border rounded shadow space-y-6">
@@ -226,132 +137,104 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
 
       <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full">
-          <label className="block font-semibold mb-1">{props.productNameLabel}</label>
-          <input value={variantName} onChange={(e) => setVariantName(e.target.value)} className="w-full border p-2" />
-          {errors.variantName && <p className="text-sm text-red-500">{errors.variantName}</p>}
+          <Label>{props.productNameLabel}</Label>
+          <input
+            value={variantName}
+            onChange={(e) => setVariantName(e.target.value)}
+            className="w-full border p-2"
+          />
         </div>
-        <div className="w-full relative" ref={dropdownRef}>
-          <label className="block font-semibold mb-1">{props.shopLabel}</label>
-          <div
-            className="w-full border p-2 cursor-pointer flex justify-between items-center"
-            onClick={() => setDropdownOpen(prev => !prev)}
-          >
-            <input
-              type="text"
-              value={productCode ? products.find(p => p.product_code === productCode)?.product_name || searchTerm : searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setProductCode("");
-                setDropdownOpen(true);
-              }}
-              placeholder="Search or select product"
-              className="w-full outline-none"
+
+        <div className="w-full">
+          <Label>Product</Label>
+          <div className="relative">
+            <Select
+              options={productOptions}
+              placeholder="Select Product"
+              onChange={(val) => setProductCode(val)}
             />
-            <span className="ml-2 text-gray-500">▼</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <ChevronDownIcon />
+            </span>
           </div>
-          {dropdownOpen && (
-            <div className="absolute w-full border border-t-0 max-h-60 overflow-y-auto shadow-md bg-white z-10">
-              {filteredProducts.length > 0 ? (
-                filteredProducts.map((p) => (
-                  <div
-                    key={`${p.product_code}-${p.barcode}`}
-                    onClick={() => {
-                      setProductCode(p.product_code);
-                      setSearchTerm(p.product_name);
-                      setDropdownOpen(false);
-                    }}
-                    className="p-2 hover:bg-gray-100 cursor-pointer"
-                  >
-                    {p.product_name}
-                  </div>
-                ))
-              ) : (
-                <div className="p-2 text-gray-500">No products found</div>
-              )}
-            </div>
-          )}
-          {errors.productCode && <p className="text-sm text-red-500">{errors.productCode}</p>}
         </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full">
-          <label className="block font-semibold mb-1">{props.mainCategoryLabel}</label>
+          <Label>{props.mainCategoryLabel}</Label>
+          <div className="relative">
+            <Select
+              options={mainCategoryOptions}
+              placeholder="Main Category"
+              onChange={setMainCategoryCode}
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <ChevronDownIcon />
+            </span>
+          </div>
+        </div>
+
+        <div className="w-full">
+          <Label>{props.subCategoryLabel}</Label>
+          <div className="relative">
+            <Select
+              options={subCategoryOptions}
+              placeholder="Sub Category"
+              onChange={setSubCategoryCode}
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <ChevronDownIcon />
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="w-full">
+          <Label>Size</Label>
           <input value={size} onChange={(e) => setSize(e.target.value)} className="w-full border p-2" />
-          {errors.size && <p className="text-sm text-red-500">{errors.size}</p>}
         </div>
         <div className="w-full">
-          <label className="block font-semibold mb-1">{props.subCategoryLabel}</label>
+          <Label>Selling Price</Label>
           <input inputMode="decimal" pattern="[0-9]*" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} className="w-full border p-2" />
-          {errors.sellingPrice && <p className="text-sm text-red-500">{errors.sellingPrice}</p>}
         </div>
       </div>
 
       <div>
-        <label className="block font-semibold mb-1">{props.barcodeLabel}</label>
+        <Label>{props.barcodeLabel}</Label>
         <input value={barcode} onChange={(e) => setBarcode(e.target.value)} className="w-full border p-2" />
-        {errors.barcode && <p className="text-sm text-red-500">{errors.barcode}</p>}
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 items-center">
         <div className="w-full">
-          <label className="block font-semibold mb-1">{props.discountLabel}</label>
-          <input
-            type="number"
-            value={discountPercentage}
-            onChange={(e) => setDiscountPercentage(e.target.value)}
-            className="w-full border p-2"
-          />
-          {errors.discountPercentage && <p className="text-sm text-red-500">{errors.discountPercentage}</p>}
+          <Label>{props.discountLabel}</Label>
+          <input type="number" value={discountPercentage} onChange={(e) => setDiscountPercentage(e.target.value)} className="w-full border p-2" />
         </div>
         <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            checked={isDiscountActive}
-            onChange={(e) => setIsDiscountActive(e.target.checked)}
-            className="h-6 w-6"
-          />
-          <label className="font-semibold">{props.discountToggleLabel}</label>
+          <input type="checkbox" checked={isDiscountActive} onChange={(e) => setIsDiscountActive(e.target.checked)} className="h-6 w-6" />
+          <Label>{props.discountToggleLabel}</Label>
         </div>
       </div>
-
-       {/* Image upload */}
-        <div>
-          <Label>Upload file</Label>
-          <FileInput
-            onChange={handleImageUpload}
-            className={errors.imageUrl ? 'border-red-500' : ''}
-          />
-          {errors.imageUrl && <p className="mt-1 text-sm text-red-500">{errors.imageUrl}</p>}
-        </div>
 
       <div>
-        <label className="block font-semibold mb-1">{props.attributeLabel}</label>
-        {attributes.map((attr, index) => (
-          <div key={index} className="flex gap-2 mb-2">
-            <input
-              value={attr.name}
-              onChange={(e) => handleAttributeChange(index, "name", e.target.value)}
-              placeholder="Name"
-              className="border p-2 w-1/2"
-            />
-            <input
-              value={attr.value}
-              onChange={(e) => handleAttributeChange(index, "value", e.target.value)}
-              placeholder="Value"
-              className="border p-2 w-1/2"
-            />
-            <button type="button" className="text-red-600" onClick={() => removeAttributeField(index)}>
-              Remove
-            </button>
-          </div>
-        ))}
-        <button type="button" onClick={addAttributeField} className="border px-4 py-1">
-          + Add Attribute
-        </button>
+        <Label>Upload file</Label>
+        <FileInput onChange={handleImageUpload} />
       </div>
 
-      <button onClick={handleConfirm} disabled={isSubmitting} className="bg-blue-600 text-white px-4 py-2 rounded">
+      <div>
+        <Label>{props.attributeLabel}</Label>
+        {attributes.map((attr, index) => (
+          <div key={index} className="flex gap-2 mb-2">
+            <input value={attr.name} onChange={(e) => handleAttributeChange(index, "name", e.target.value)} placeholder="Name" className="border p-2 w-1/2" />
+            <input value={attr.value} onChange={(e) => handleAttributeChange(index, "value", e.target.value)} placeholder="Value" className="border p-2 w-1/2" />
+            <button type="button" className="text-red-600" onClick={() => removeAttributeField(index)}>Remove</button>
+          </div>
+        ))}
+        <button type="button" onClick={addAttributeField} className="border px-4 py-1">+ Add Attribute</button>
+      </div>
+
+      <button onClick={handleSubmit} disabled={isSubmitting} className="bg-blue-600 text-white px-4 py-2 rounded">
         {isSubmitting ? "Submitting..." : "Add Product Variant"}
       </button>
     </div>
