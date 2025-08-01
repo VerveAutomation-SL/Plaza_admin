@@ -59,9 +59,9 @@ export default function AccessControlWrapper({ children }: Props) {
       const restrictedRoutes: Record<string, string[]> = {
         cashier: [
           "/product", "/product-varient", "/main-categories",
-          "/sub-categories", "/stock", "/shop", "/business", "/employee"
+          "/sub-categories", "/stock", "/shop", "/business", "/employee", "/profile"
         ],
-        shop: ["/pos", "/business"],
+        shop: ["/pos", "/business", "/shop", "/employee", "/profile"],
       };
 
       const blockList = restrictedRoutes[role] || [];

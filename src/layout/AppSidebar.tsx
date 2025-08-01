@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { jwtDecode } from "jwt-decode";
 import { useSidebar } from "../context/SidebarContext";
@@ -220,7 +219,9 @@ const AppSidebar: React.FC = () => {
               Plaza One - Jaffna
             </span>
           ) : (
-            <Image src="/images/logo/logo-icon.svg" alt="Logo" width={32} height={32} />
+            <span className="text-[24px] font-bold text-gray-900 dark:text-white">
+              Plaza One - Jaffna
+            </span>
           )}
         </Link>
       </div>
