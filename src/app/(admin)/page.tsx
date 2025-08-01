@@ -10,7 +10,7 @@ import DemographicCard from "@/components/ecommerce/DemographicCard";
 export const metadata: Metadata = {
   title:
     "Plazaa One",
-  description: "This is Next.js Home for TailAdmin Dashboard Template",
+  description: "PLAZAONE ADMIN BY VERVE AUTOMATION",
 };
 
 export default function Ecommerce() {

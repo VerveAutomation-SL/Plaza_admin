@@ -9,6 +9,8 @@ import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { loginAdmin } from "@/lib/api/authApi";
 import axios from "axios";
+import Cookies from "js-cookie";
+import { jwtDecode } from "jwt-decode";
 
 export default function SignInForm() {
   const router = useRouter();
@@ -18,6 +20,16 @@ export default function SignInForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
+
+  interface DecodedToken {
+  id: string;
+  name?: string;
+  email?: string;
+  role: string;
+  exp: number;
+  iat: number;
+}
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,19 +37,24 @@ export default function SignInForm() {
     setError("");
 
     try {
-      const res = await loginAdmin({ email, password });
-      const token = res.token;
-      const user = res.Adminuser;
+  const res = await loginAdmin({ email, password });
+  const token = res.token;
 
-      const role = user.role;
+  // Decode the token to get user details
+  const decoded: DecodedToken = jwtDecode(token);
+  console.log("Decoded Token:", decoded);
 
-      if (role === "admin" || role === "cashier" || role === "shop") {
-        localStorage.setItem("token", token);
-        router.push("/");
-      } else {
-        setError("Unauthorized role detected.");
-        localStorage.clear();
-      }
+  const role = decoded.role;
+
+  if (role === "admin" || role === "cashier" || role === "shop") {
+    // Save token in cookies
+    Cookies.set("auth_token", token, { expires: 7 });
+
+    router.push("/");
+  } else {
+    setError("Unauthorized role detected.");
+    localStorage.clear();
+  }
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.message || "Login failed. Try again.");

@@ -1,6 +1,9 @@
 // import UserAddressCard from "@/components/user-profile/UserAddressCard";
-import UserInfoCard from "@/components/user-profile/UserInfoCard";
-import UserMetaCard from "@/components/user-profile/UserMetaCard";
+import DefaultInputs from "@/components/form/form-elements/DefaultInputs/addUser";
+// import UserInfoCard from "@/components/user-profile/UserInfoCard";
+// import UserMetaCard from "@/components/user-profile/UserMetaCard";
+import UserTable from "@/components/tables/UserTable";
+
 import { Metadata } from "next";
 import React from "react";
 
@@ -18,10 +21,18 @@ export default function Profile() {
           User Profile
         </h3>
         <div className="space-y-6">
-          <UserMetaCard />
-          <UserInfoCard />
+          {/* <UserMetaCard />
+          <UserInfoCard /> */}
           {/* <UserAddressCard /> */}
+          <DefaultInputs
+            cardTitle="Admin Registration"
+            fullNameLabel="Full Name"
+            emailLabel="Email Address"
+            passwordLabel="Password"
+            roleLabel="Role"
+          />
         </div>
+        <UserTable />
       </div>
     </div>
   );
