@@ -21,8 +21,11 @@ export const updateMainCategory = async (data: {
 };
 
 export const deleteMainCategory = async (data: { mCategory_code: string }) => {
-  return axios.post(`${BASE_URL}/DeleteMCategory`, data);
+  return axios.delete(`${BASE_URL}/DeleteMCategory`, {
+    data: data,
+  });
 };
+
 
 // ------------------ Sub Category APIs ------------------
 
@@ -45,6 +48,14 @@ export const updateSubCategory = async (data: {
   return axios.put(`${BASE_URL}/updateSubCategory`, data);
 };
 
-export const deleteSubCategory = async (data: { SubCategory_code: string }) => {
-  return axios.post(`${BASE_URL}/DeleteSubCategory`, data);
+export const deleteSubCategory = async (data: { SCategory_code: string }) => {
+  return axios.delete(`${BASE_URL}/DeleteSubCategory`, {
+    data: { SubCategory_code: data.SCategory_code }
+  });
 };
+
+
+
+
+
+

@@ -2,8 +2,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { updateSubCategory } from "@/lib/api/categoryApi";
-import { toast } from "react-hot-toast";
 import { useDropdowns } from "@/context/DropdownContext";
+import toast from "react-hot-toast";
 
 interface UpdateSubCategoryModalProps {
   isOpen: boolean;
@@ -13,12 +13,18 @@ interface UpdateSubCategoryModalProps {
     SCategory_name: string;
     MainCategory_code: string;
   };
+  onUpdate: (updated: {
+    SCategory_code: string;
+    SCategory_name: string;
+    MainCategory_code: string;
+  }) => void;
 }
 
 export const UpdateSubCategoryModal: React.FC<UpdateSubCategoryModalProps> = ({
   isOpen,
   onClose,
   initialData,
+  onUpdate,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const { mainCategoryOptions } = useDropdowns();
@@ -64,16 +70,16 @@ export const UpdateSubCategoryModal: React.FC<UpdateSubCategoryModalProps> = ({
         SCategory_name: subCategoryData.SCategory_name,
         MainCategory_code: subCategoryData.MainCategory_code,
       };
+
       await updateSubCategory(updatedPayload);
-      toast.success("Subcategory updated successfully.", {
-        position: "top-center",
-      });
+
+      // Notify parent to update local state
+      onUpdate(updatedPayload);
+
       onClose();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update subcategory.", {
-        position: "top-center",
-      });
+      toast.error("Failed to update SubCategory.", { position: "top-center" });
     }
   };
 

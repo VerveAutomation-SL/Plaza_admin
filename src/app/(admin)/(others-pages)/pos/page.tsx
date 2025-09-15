@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { Search, ShoppingCart, Plus, Minus, X, Eye } from "lucide-react";
-import { getAllProducts, getProductByBarcode } from "@/lib/api/productApi";
+import { getAllProducts } from "@/lib/api/productApi";
 import { placeOrder } from "@/lib/api/orderApi";
 import toast, { Toaster } from "react-hot-toast";
 import ViewProductModal from "@/components/ui/modal/ViewProductModal";
@@ -33,13 +33,37 @@ interface CartItem extends Product {
 
 interface DecodedToken {
   role: string;
-  [key: string]: string;
+  user_id?: string;
+  id?: string;
+  [key: string]: string | undefined;
 }
 
 interface CategoryGroup {
   main: string;
   code: string;
   subs: { name: string; code: string }[];
+}
+
+// Add proper types for category API responses
+interface MainCategory {
+  mCategory_code: string;
+  mCategory_name: string;
+}
+
+interface SubCategory {
+  SCategory_code: string;
+  SCategory_name: string;
+  MainCategory?: {
+    mCategory_code: string;
+  };
+}
+
+interface MainCategoryResponse {
+  data?: MainCategory[];
+}
+
+interface SubCategoryResponse {
+  data?: SubCategory[];
 }
 
 const PRODUCTS_PER_PAGE = 6;
@@ -83,19 +107,19 @@ export default function POSPage() {
     const fetchCategories = async () => {
       try {
         const [mainRes, subRes] = await Promise.all([
-          getAllMainCategories(),
-          getAllSubCategories(),
+          getAllMainCategories() as Promise<MainCategoryResponse>,
+          getAllSubCategories() as Promise<SubCategoryResponse>,
         ]);
 
         const mainList = mainRes.data || [];
         const subList = subRes.data || [];
 
-        const structured = mainList.map((main: any) => ({
+        const structured: CategoryGroup[] = mainList.map((main: MainCategory) => ({
           main: main.mCategory_name,
           code: main.mCategory_code,
           subs: subList
-            .filter((sub: any) => sub.MainCategory?.mCategory_code === main.mCategory_code)
-            .map((sub: any) => ({
+            .filter((sub: SubCategory) => sub.MainCategory?.mCategory_code === main.mCategory_code)
+            .map((sub: SubCategory) => ({
               name: sub.SCategory_name,
               code: sub.SCategory_code,
             })),
@@ -414,7 +438,7 @@ export default function POSPage() {
 
                     <div className="mt-auto flex justify-between gap-2">
                       <button
-                        onClick={() => setSelectedProduct(product)} // ✅ Trigger modal here
+                        onClick={() => setSelectedProduct(product)}
                         className="flex items-center justify-center w-10 h-10 rounded bg-gray-100 hover:bg-gray-200 text-gray-700"
                       >
                         <Eye className="h-5 w-5" />
@@ -578,5 +602,3 @@ export default function POSPage() {
     </div>
   );
 }
-
-

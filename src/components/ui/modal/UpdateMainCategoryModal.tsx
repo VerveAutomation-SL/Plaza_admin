@@ -11,12 +11,14 @@ interface UpdateMainCategoryModalProps {
     mCategory_code: string;
     mCategory_name: string;
   };
+  onUpdate: (updated: { mCategory_code: string; mCategory_name: string }) => void; // <-- callback
 }
 
 export const UpdateMainCategoryModal: React.FC<UpdateMainCategoryModalProps> = ({
   isOpen,
   onClose,
   initialData,
+  onUpdate, // <-- receive callback
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
   const [categoryData, setCategoryData] = useState({
@@ -26,10 +28,7 @@ export const UpdateMainCategoryModal: React.FC<UpdateMainCategoryModalProps> = (
 
   useEffect(() => {
     if (initialData) {
-      setCategoryData({
-        mCategory_code: initialData.mCategory_code,
-        mCategory_name: initialData.mCategory_name,
-      });
+      setCategoryData({ ...initialData });
     }
   }, [initialData]);
 
@@ -56,6 +55,7 @@ export const UpdateMainCategoryModal: React.FC<UpdateMainCategoryModalProps> = (
   const handleSubmit = async () => {
     try {
       await updateMainCategory(categoryData);
+      onUpdate(categoryData); // <-- update parent state in-place
       toast.success("Main Category updated successfully!", {
         position: "top-center",
       });

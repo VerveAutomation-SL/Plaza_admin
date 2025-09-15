@@ -3,37 +3,26 @@
 import React, { useRef, useEffect, useState } from "react";
 import { updateBusiness } from "@/lib/api/businessApi";
 import { toast } from "react-hot-toast";
+import type { Business } from "@/lib/api/businessApi";
 
 interface UpdateBusinessModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialData: {
-    business_code: string;
-    business_name: string;
-    description: string;
-  };
+  initialData: Business;
+  onUpdate: (updated: Business) => void;
 }
 
 export const Modal: React.FC<UpdateBusinessModalProps> = ({
   isOpen,
   onClose,
   initialData,
+  onUpdate,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
-  const [businessData, setBusinessData] = useState({
-    business_code: "",
-    business_name: "",
-    description: "",
-  });
+  const [businessData, setBusinessData] = useState<Business>(initialData);
 
   useEffect(() => {
-    if (initialData) {
-      setBusinessData({
-        business_code: initialData.business_code,
-        business_name: initialData.business_name,
-        description: initialData.description,
-      });
-    }
+    if (initialData) setBusinessData(initialData);
   }, [initialData]);
 
   useEffect(() => {
@@ -51,7 +40,9 @@ export const Modal: React.FC<UpdateBusinessModalProps> = ({
     };
   }, [isOpen]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setBusinessData((prev) => ({ ...prev, [name]: value }));
   };
@@ -63,15 +54,12 @@ export const Modal: React.FC<UpdateBusinessModalProps> = ({
         description: businessData.description,
       };
       await updateBusiness(businessData.business_code, updatedPayload);
-      toast.success("Business updated successfully.", {
-        position: "top-center",
-      });
+      onUpdate(businessData); // update parent table
+      toast.success("Business updated successfully.", { position: "top-center" });
       onClose();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update business.", {
-        position: "top-center",
-      });
+      toast.error("Failed to update business.", { position: "top-center" });
     }
   };
 
@@ -111,7 +99,6 @@ export const Modal: React.FC<UpdateBusinessModalProps> = ({
             placeholder="Description"
             className="w-full border p-2"
           />
-
           <button
             onClick={handleSubmit}
             className="bg-blue-600 text-white px-4 py-2 rounded"

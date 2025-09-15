@@ -1,6 +1,6 @@
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import DefaultInputs from "@/components/form/form-elements/DefaultInputs/AddBusinessInputs";
-import BusinessTable from "@/components/tables/BusinessTable";
+import {BusinessTable} from "@/components/tables/BusinessTable";
 import { Metadata } from "next";
 import React from "react";
 

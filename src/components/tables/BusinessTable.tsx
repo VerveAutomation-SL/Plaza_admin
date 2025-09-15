@@ -14,7 +14,10 @@ import { Modal } from "../ui/modal/UpdateBusinessModal";
 import type { Business } from "@/lib/api/businessApi";
 import { toast } from "react-hot-toast";
 
-export default function BusinessTable() {
+const sortByBusinessCode = (arr: Business[]) =>
+  [...arr].sort((a, b) => a.business_code.localeCompare(b.business_code));
+
+export const BusinessTable: React.FC = () => {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
@@ -23,7 +26,7 @@ export default function BusinessTable() {
     const fetchBusinesses = async () => {
       try {
         const res = await getBusinesses();
-        setBusinesses(res);
+        setBusinesses(sortByBusinessCode(res));
       } catch (error) {
         console.error("Failed to fetch businesses:", error);
       }
@@ -74,6 +77,14 @@ export default function BusinessTable() {
     ));
   };
 
+  const handleUpdateBusiness = (updated: Business) => {
+    setBusinesses((prev) => sortByBusinessCode(
+      prev.map((b) =>
+        b.business_code === updated.business_code ? updated : b
+      )
+    ));
+  };
+
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
       <div className="max-w-full overflow-x-auto">
@@ -91,42 +102,43 @@ export default function BusinessTable() {
             </TableHeader>
 
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {Array.isArray(businesses) && businesses.map((biz) => (
-                <TableRow key={biz.business_code}>
-                  <TableCell className="px-3 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">
-                    {biz.business_code}
-                  </TableCell>
-                  <TableCell className="px-3 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">
-                    {biz.business_name}
-                  </TableCell>
-                  <TableCell className="px-3 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">
-                    {biz.description}
-                  </TableCell>
-                  <TableCell className="px-3 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">
-                    {biz.createdAt ? new Date(biz.createdAt).toLocaleString() : "N/A"}
-                  </TableCell>
-                  <TableCell className="px-3 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">
-                    {biz.updatedAt ? new Date(biz.updatedAt).toLocaleString() : "N/A"}
-                  </TableCell>
-                  <TableCell className="px-3 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="text-blue-500 hover:text-blue-700"
-                        onClick={() => handleEditClick(biz)}
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      /
-                      <button
-                        onClick={() => handleDelete(biz)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {Array.isArray(businesses) &&
+                businesses.map((biz) => (
+                  <TableRow key={biz.business_code}>
+                    <TableCell className="px-3 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">
+                      {biz.business_code}
+                    </TableCell>
+                    <TableCell className="px-3 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">
+                      {biz.business_name}
+                    </TableCell>
+                    <TableCell className="px-3 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">
+                      {biz.description}
+                    </TableCell>
+                    <TableCell className="px-3 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">
+                      {biz.createdAt ? new Date(biz.createdAt).toLocaleString() : "N/A"}
+                    </TableCell>
+                    <TableCell className="px-3 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">
+                      {biz.updatedAt ? new Date(biz.updatedAt).toLocaleString() : "N/A"}
+                    </TableCell>
+                    <TableCell className="px-3 py-4 text-start text-gray-500 text-theme-sm dark:text-gray-400">
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="text-blue-500 hover:text-blue-700"
+                          onClick={() => handleEditClick(biz)}
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        /
+                        <button
+                          onClick={() => handleDelete(biz)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </div>
@@ -137,8 +149,9 @@ export default function BusinessTable() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           initialData={selectedBusiness}
+          onUpdate={handleUpdateBusiness}
         />
       )}
     </div>
   );
-}
+};

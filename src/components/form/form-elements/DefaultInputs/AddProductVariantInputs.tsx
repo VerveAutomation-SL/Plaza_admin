@@ -48,7 +48,6 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
   const [discountPercentage, setDiscountPercentage] = useState("");
   const [isDiscountActive, setIsDiscountActive] = useState(false);
   const [attributes, setAttributes] = useState<Attribute[]>([{ name: "", value: "" }]);
-  const [errors, setErrors] = useState<ValidationErrors>({});
   const [image, setImage] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -56,7 +55,6 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
     productOptions,
     mainCategoryOptions,
     subCategoryOptions,
-    shopOptions,
   } = useContext(DropdownContext);
 
   const validateForm = (): boolean => {
@@ -67,8 +65,14 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
     if (!sellingPrice.trim()) newErrors.sellingPrice = "Selling price is required";
     if (!barcode.trim()) newErrors.barcode = "Barcode is required";
     if (isDiscountActive && !discountPercentage.trim()) newErrors.discountPercentage = "Discount is required";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    
+    // If there are errors, show them via toast instead of storing in state
+    if (Object.keys(newErrors).length > 0) {
+      const firstError = Object.values(newErrors)[0];
+      toast.error(firstError);
+      return false;
+    }
+    return true;
   };
 
   const handleAttributeChange = (index: number, field: keyof Attribute, value: string) => {
@@ -118,18 +122,26 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
       setProductCode("");
       setMainCategoryCode("");
       setSubCategoryCode("");
+      setShopId("");
       setSize("");
       setSellingPrice("");
       setBarcode("");
       setDiscountPercentage("");
       setIsDiscountActive(false);
       setAttributes([{ name: "", value: "" }]);
+      setImage(null);
     } catch {
       toast.error("Failed to add product variant.");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Create fallback options if not available in context
+  const shopOptions = [
+    { value: "SHOP001", label: "Main Shop" },
+    // Add your actual shop options here
+  ];
 
   return (
     <div className="p-6 bg-white border rounded shadow space-y-6">
@@ -192,18 +204,33 @@ export default function AddProductVariantPage(props: DefaultInputsProps) {
 
       <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full">
+          <Label>{props.shopLabel}</Label>
+          <div className="relative">
+            <Select
+              options={shopOptions}
+              placeholder="Select Shop"
+              onChange={(val) => setShopId(val)}
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+              <ChevronDownIcon />
+            </span>
+          </div>
+        </div>
+        <div className="w-full">
           <Label>Size</Label>
           <input value={size} onChange={(e) => setSize(e.target.value)} className="w-full border p-2" />
         </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full">
           <Label>Selling Price</Label>
           <input inputMode="decimal" pattern="[0-9]*" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} className="w-full border p-2" />
         </div>
-      </div>
-
-      <div>
-        <Label>{props.barcodeLabel}</Label>
-        <input value={barcode} onChange={(e) => setBarcode(e.target.value)} className="w-full border p-2" />
+        <div className="w-full">
+          <Label>{props.barcodeLabel}</Label>
+          <input value={barcode} onChange={(e) => setBarcode(e.target.value)} className="w-full border p-2" />
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 items-center">

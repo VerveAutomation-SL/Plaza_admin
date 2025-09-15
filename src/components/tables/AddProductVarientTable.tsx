@@ -35,6 +35,12 @@ interface ProductVariant {
   discountSellingPrice: number;
 }
 
+interface ApiError {
+  response?: {
+    status: number;
+  };
+}
+
 export default function BasicTableOne() {
   const [barcode, setBarcode] = useState("");
   const [product, setProduct] = useState<ProductVariant | null | "not-found">(null);
@@ -51,8 +57,9 @@ export default function BasicTableOne() {
         setProduct("not-found");
         toast.error("No product found for the entered barcode.");
       }
-    } catch (error: any) {
-      if (error?.response?.status === 404) {
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      if (apiError?.response?.status === 404) {
         setProduct("not-found");
         toast.error("No product found for the entered barcode.");
       } else {

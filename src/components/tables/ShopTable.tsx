@@ -105,6 +105,15 @@ export default function BasicTableOne() {
     setIsModalOpen(true);
   };
 
+  const handleLocalUpdate = (updated: Shop) => {
+    setShops((prev) =>
+      prev.map((s) => (s.id === updated.id ? updated : s))
+    );
+    setIsModalOpen(false);
+    setSelectedShop(null);
+    toast.success("Shop updated successfully.", { position: "top-center" });
+  };
+
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
       <div className="max-w-full overflow-x-auto">
@@ -112,65 +121,80 @@ export default function BasicTableOne() {
           <Table>
             <TableHeader className="border-b border-gray-100 dark:border-white/[0.05]">
               <TableRow>
-                <TableCell isHeader className="px-3 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Image</TableCell>
-                <TableCell isHeader className="px-3 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Shop Name</TableCell>
-                <TableCell isHeader className="px-3 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Location</TableCell>
-                <TableCell isHeader className="px-3 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Contact</TableCell>
-                <TableCell isHeader className="px-3 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Owner</TableCell>
-                <TableCell isHeader className="px-3 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Business</TableCell>
-                <TableCell isHeader className="px-3 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">Actions</TableCell>
+                <TableCell isHeader className="px-3 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                  Image
+                </TableCell>
+                <TableCell isHeader className="px-3 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                  Shop Name
+                </TableCell>
+                <TableCell isHeader className="px-3 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                  Location
+                </TableCell>
+                <TableCell isHeader className="px-3 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                  Contact
+                </TableCell>
+                <TableCell isHeader className="px-3 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                  Owner
+                </TableCell>
+                <TableCell isHeader className="px-3 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                  Business
+                </TableCell>
+                <TableCell isHeader className="px-3 py-3 font-medium text-gray-500 text-start text-theme-xs dark:text-gray-400">
+                  Actions
+                </TableCell>
               </TableRow>
             </TableHeader>
 
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {Array.isArray(shops) && shops.map((shop) => (
-                <TableRow key={shop.id}>
-                  <TableCell className="px-3 py-4 sm:px-4 text-start">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 overflow-hidden rounded-full">
-                        <Image
-                          width={40}
-                          height={40}
-                          src={shop.image_url || "/images/default-product.png"}
-                          alt={shop.shop_name}
-                        />
+              {Array.isArray(shops) &&
+                shops.map((shop) => (
+                  <TableRow key={shop.id}>
+                    <TableCell className="px-3 py-4 sm:px-4 text-start">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 overflow-hidden rounded-full">
+                          <Image
+                            width={40}
+                            height={40}
+                            src={shop.image_url || "/images/default-product.png"}
+                            alt={shop.shop_name}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-3 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                    {shop.shop_name}
-                  </TableCell>
-                  <TableCell className="px-3 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                    {shop.location}
-                  </TableCell>
-                  <TableCell className="px-3 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                    {shop.contact_number}
-                  </TableCell>
-                  <TableCell className="px-3 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                    {shop.AdminUser.full_name}
-                  </TableCell>
-                  <TableCell className="px-3 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                    {shop.Business.business_name}
-                  </TableCell>
-                  <TableCell className="px-3 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="text-blue-500 hover:text-blue-700"
-                        onClick={() => handleEditClick(shop)}
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      /
-                      <button
-                        className="text-red-500 hover:text-red-700"
-                        onClick={() => handleDelete(shop)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell className="px-3 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {shop.shop_name}
+                    </TableCell>
+                    <TableCell className="px-3 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {shop.location}
+                    </TableCell>
+                    <TableCell className="px-3 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {shop.contact_number}
+                    </TableCell>
+                    <TableCell className="px-3 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {shop.AdminUser.full_name}
+                    </TableCell>
+                    <TableCell className="px-3 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {shop.Business.business_name}
+                    </TableCell>
+                    <TableCell className="px-3 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="text-blue-500 hover:text-blue-700"
+                          onClick={() => handleEditClick(shop)}
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        /
+                        <button
+                          className="text-red-500 hover:text-red-700"
+                          onClick={() => handleDelete(shop)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </div>
@@ -181,6 +205,7 @@ export default function BasicTableOne() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           initialData={selectedShop}
+          onUpdate={handleLocalUpdate}
         />
       )}
     </div>

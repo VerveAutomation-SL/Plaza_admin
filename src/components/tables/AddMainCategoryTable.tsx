@@ -9,10 +9,7 @@ import {
   TableRow,
 } from "../ui/table";
 import { Pencil, Trash2 } from "lucide-react";
-import {
-  getAllMainCategories,
-  deleteMainCategory,
-} from "@/lib/api/categoryApi";
+import { getAllMainCategories, deleteMainCategory } from "@/lib/api/categoryApi";
 import { toast } from "react-hot-toast";
 import { UpdateMainCategoryModal } from "../ui/modal/UpdateMainCategoryModal";
 
@@ -20,6 +17,9 @@ interface MainCategory {
   mCategory_code: string;
   mCategory_name: string;
 }
+
+const sortByCode = (arr: MainCategory[]) =>
+  [...arr].sort((a, b) => a.mCategory_code.localeCompare(b.mCategory_code));
 
 export default function BasicTableOneMainCategory() {
   const [categories, setCategories] = useState<MainCategory[]>([]);
@@ -30,7 +30,7 @@ export default function BasicTableOneMainCategory() {
     async function fetchData() {
       try {
         const res = await getAllMainCategories();
-        setCategories(res.data);
+        setCategories(sortByCode(res.data));
       } catch (err) {
         console.error("Failed to load categories:", err);
       }
@@ -51,21 +51,15 @@ export default function BasicTableOneMainCategory() {
               onClick={async () => {
                 try {
                   await deleteMainCategory({ mCategory_code: cat.mCategory_code });
-                  setCategories((prev) =>
-                    prev.filter((item) => item.mCategory_code !== cat.mCategory_code)
+                  setCategories(prev =>
+                    sortByCode(prev.filter(item => item.mCategory_code !== cat.mCategory_code))
                   );
                   toast.dismiss(t.id);
-                  toast.success("Category deleted successfully", {
-                    position: "top-center",
-                    style: { top: "5rem" },
-                  });
+                  toast.success("Category deleted successfully", { position: "top-center" });
                 } catch (error) {
                   console.error(error);
                   toast.dismiss(t.id);
-                  toast.error("Failed to delete category", {
-                    position: "top-center",
-                    style: { top: "5rem" },
-                  });
+                  toast.error("Failed to delete category", { position: "top-center" });
                 }
               }}
               className="px-5 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
@@ -87,6 +81,21 @@ export default function BasicTableOneMainCategory() {
   const handleEdit = (cat: MainCategory) => {
     setSelectedCategory(cat);
     setIsModalOpen(true);
+  };
+
+  const handleLocalUpdate = (updated: { mCategory_code: string; mCategory_name: string }) => {
+    setCategories(prev =>
+      sortByCode(
+        prev.map(cat =>
+          cat.mCategory_code === updated.mCategory_code
+            ? { ...cat, mCategory_name: updated.mCategory_name }
+            : cat
+        )
+      )
+    );
+    setIsModalOpen(false);
+    setSelectedCategory(null);
+    toast.success("Category updated successfully", { position: "top-center" });
   };
 
   return (
@@ -144,6 +153,7 @@ export default function BasicTableOneMainCategory() {
             setSelectedCategory(null);
           }}
           initialData={selectedCategory}
+          onUpdate={handleLocalUpdate}
         />
       )}
     </>
