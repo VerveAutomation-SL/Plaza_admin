@@ -112,14 +112,22 @@ export default function POSPage() {
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      const matchesSearch = product.product_name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesMain = selectedMainCategory.code === "ALL" || product.mCategory_code === selectedMainCategory.code;
-      const matchesSub = selectedSubCategory.code === "ALL" || product.sCategory_code === selectedSubCategory.code;
+      const matchesSearch =
+        searchMode === "name"
+          ? product.product_name.toLowerCase().includes(searchTerm.toLowerCase())
+          : product.barcode.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesMain =
+        selectedMainCategory.code === "ALL" || product.mCategory_code === selectedMainCategory.code;
+      const matchesSub =
+        selectedSubCategory.code === "ALL" || product.sCategory_code === selectedSubCategory.code;
       const matchesDiscount = !onlyDiscounted || product.is_discount_active;
       const matchesStock = !onlyInStock || product.total_quantity > 0;
+
       return matchesSearch && matchesMain && matchesSub && matchesDiscount && matchesStock;
     });
-  }, [searchTerm, selectedMainCategory, selectedSubCategory, onlyDiscounted, onlyInStock, products]);
+  }, [searchTerm, searchMode, selectedMainCategory, selectedSubCategory, onlyDiscounted, onlyInStock, products]);
+
 
   const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
   const paginatedProducts = useMemo(() => {
